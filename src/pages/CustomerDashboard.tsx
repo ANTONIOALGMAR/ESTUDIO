@@ -31,7 +31,7 @@ const CustomerDashboard = () => {
 
     try {
       setLoading(true); // Added this line
-      const response = await fetch('http://localhost:5001/api/bookings/customer', {
+      const response = await fetch('https://estudio-backend-skzl.onrender.com', {
         headers: {
           'auth-token': token,
         },
