@@ -11,7 +11,9 @@ router.post('/login', async (req, res) => {
     // Tenta autenticar como Admin
     let user = await User.findOne({ email });
     if (user) {
+      console.log('Tentando login como Admin para:', email);
       const validPass = await bcrypt.compare(password, user.password);
+      console.log('validPass (Admin):', validPass);
       if (validPass) {
         const token = jwt.sign({ id: user._id, isAdmin: true }, 'your_jwt_secret_key', { expiresIn: '1h' });
         return res.header('auth-token', token).json({ token, userType: 'admin' });
@@ -21,7 +23,9 @@ router.post('/login', async (req, res) => {
     // Se não for Admin ou senha inválida, tenta autenticar como Cliente
     let customer = await Customer.findOne({ email });
     if (customer) {
+      console.log('Tentando login como Cliente para:', email);
       const validPass = await bcrypt.compare(password, customer.password);
+      console.log('validPass (Cliente):', validPass);
       if (validPass) {
         const token = jwt.sign({ id: customer._id, isCustomer: true }, 'your_jwt_secret_key', { expiresIn: '1h' });
         return res.header('customer-auth-token', token).json({ token, userType: 'customer' });
