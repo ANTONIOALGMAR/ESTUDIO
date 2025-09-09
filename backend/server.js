@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-const uri = "mongodb://localhost:27017/studioo__carvalhoo";
+const uri = process.env.MONGO_URI;
 mongoose.connect(uri);
 
 const connection = mongoose.connection;
