@@ -1,5 +1,4 @@
 const express = require('express');
-const cors = require('cors');
 const mongoose = require('mongoose');
 
 // Initialize Express app
@@ -7,7 +6,12 @@ const app = express();
 const port = process.env.PORT || 5001;
 
 // Middleware
-app.use(cors());
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*'); // Permite acesso de qualquer origem
+  res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, auth-token');
+  next();
+});
 app.use(express.json());
 
 // MongoDB Connection
