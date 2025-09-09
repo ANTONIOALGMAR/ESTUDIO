@@ -41,4 +41,45 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Rota de Registro Unificado
+router.post('/register', async (req, res) => {
+  const { fullName, email, password, userType } = req.body;
+
+  try {
+    if (!fullName || !email || !password || !userType) {
+      return res.status(400).json({ message: 'Todos os campos são obrigatórios.' });
+    }
+
+    let existingUser;
+    if (userType === 'admin') {
+      existingUser = await User.findOne({ email });
+    } else if (userType === 'customer') {
+      existingUser = await Customer.findOne({ email });
+    } else {
+      return res.status(400).json({ message: 'Tipo de usuário inválido.' });
+    }
+
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email já cadastrado.' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    let newUser;
+    if (userType === 'admin') {
+      newUser = new User({ fullName, email, password: hashedPassword });
+    } else {
+      newUser = new Customer({ fullName, email, password: hashedPassword });
+    }
+
+    const savedUser = await newUser.save();
+    res.status(201).json({ message: 'Usuário registrado com sucesso!', userId: savedUser._id });
+
+  } catch (error) {
+    console.error('ERRO NO REGISTRO UNIFICADO:', error);
+    res.status(500).json({ message: 'Erro ao registrar usuário.', error });
+  }
+});
+
 module.exports = router;

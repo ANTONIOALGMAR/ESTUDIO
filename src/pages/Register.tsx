@@ -16,12 +16,12 @@ const Register = () => {
     setError('');
 
     try {
-      const response = await fetch('https://estudio-backend-skzl.onrender.com/api/auth/register', {
+      const response = await fetch('https://estudio-backend-skzl.onrender.com/api/unified-auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ fullName, email, password }),
+        body: JSON.stringify({ fullName, email, password, userType: 'admin' }),
       });
 
       const data = await response.json();
