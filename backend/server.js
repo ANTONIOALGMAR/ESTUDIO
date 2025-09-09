@@ -9,7 +9,7 @@ const app = express();
 const port = process.env.PORT || 5001;
 
 // Middleware
-app.use(cors({ origin: 'http://localhost:3000' })); // Configuração explícita do CORS
+app.use(cors({ origin: ['http://localhost:3000', 'https://estudio-frontend-v1zk.onrender.com'] })); // Configuração explícita do CORS
 app.use(express.json());
 
 // MongoDB Connection
