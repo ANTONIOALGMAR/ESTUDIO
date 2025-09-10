@@ -14,9 +14,12 @@ const Login = () => {
     e.preventDefault();
     setError('');
 
+    // Garante que a URL da API seja a de produção, mesmo que a variável de ambiente falhe.
+    const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
+
     try {
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/unified-auth/login`,
+        `${apiUrl}/api/unified-auth/login`,
         {
           method: 'POST',
           headers: {
@@ -32,12 +35,12 @@ const Login = () => {
         throw new Error(data.message || 'Falha ao fazer login.');
       }
 
-      // ✅ O backend retorna { token, user: { userType, ... } }
+      // O backend retorna { token, user: { userType, ... } }
       if (data.token && data.user) {
-        // Salva o token e os dados do usuário de forma padronizada
-        localStorage.setItem('auth-token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-
+        // Limpa tokens antigos para evitar conflitos
+        localStorage.removeItem('auth-token');
+        localStorage.removeItem('customer-auth-token');
+        
         // Redireciona com base no tipo de usuário
         if (data.user.userType === 'admin') {
           navigate('/dashboard');

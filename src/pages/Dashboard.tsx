@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Container, Table, Alert, Spinner, Button, Form, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import BookingEditModal from '../components/BookingEditModal'; // Importa o Modal
@@ -30,7 +30,7 @@ const Dashboard = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<IBooking | null>(null);
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     const token = localStorage.getItem('auth-token');
     if (!token) {
       navigate('/login');
@@ -39,7 +39,7 @@ const Dashboard = () => {
 
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5001/api/bookings', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bookings`, {
         headers: {
           'auth-token': token,
         },
@@ -63,11 +63,11 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
 
   useEffect(() => {
     fetchBookings();
-  }, [navigate]);
+  }, [fetchBookings]);
 
   // Efeito para filtrar os agendamentos
   useEffect(() => {
@@ -85,7 +85,7 @@ const Dashboard = () => {
     if (window.confirm('Tem certeza que deseja excluir este agendamento?')) {
       const token = localStorage.getItem('auth-token');
       try {
-        const response = await fetch(`http://localhost:5001/api/bookings/${id}`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bookings/${id}`, {
           method: 'DELETE',
           headers: {
             'auth-token': token!,
@@ -108,7 +108,7 @@ const Dashboard = () => {
   const handleStatusChange = async (id: string, newStatus: string) => {
     const token = localStorage.getItem('auth-token');
     try {
-      const response = await fetch(`http://localhost:5001/api/bookings/${id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bookings/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -16,7 +16,9 @@ const Register = () => {
     setError('');
 
     try {
-      const response = await fetch('https://estudio-backend-skzl.onrender.com/api/unified-auth/register', {
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
+
+      const response = await fetch(`${apiUrl}/api/unified-auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Container, Table, Alert, Spinner, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,7 +22,7 @@ const CustomerDashboard = () => {
   const [showAssociateButton, setShowAssociateButton] = useState(false);
   const navigate = useNavigate();
 
-  const fetchCustomerBookings = async () => {
+  const fetchCustomerBookings = useCallback(async () => {
     const token = localStorage.getItem('customer-auth-token');
     if (!token) {
       navigate('/customer/login');
@@ -31,7 +31,7 @@ const CustomerDashboard = () => {
 
     try {
       setLoading(true); // Added this line
-      const response = await fetch('process.env.REACT_APP_API_URL', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bookings/customer`, {
         headers: {
           'auth-token': token,
         },
@@ -59,18 +59,18 @@ const CustomerDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
 
   useEffect(() => {
     fetchCustomerBookings();
-  }, [navigate]);
+  }, [fetchCustomerBookings]);
 
   const handleAssociateBookings = async () => {
     const token = localStorage.getItem('customer-auth-token');
     if (!token) return;
 
     try {
-      const response = await fetch('process.env.REACT_APP_API_URL/api/bookings/associate-customer', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bookings/associate-customer`, {
         method: 'POST',
         headers: {
           'auth-token': token,
