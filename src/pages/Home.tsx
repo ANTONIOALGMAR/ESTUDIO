@@ -1,6 +1,6 @@
 import React from 'react';
 import { Carousel } from 'react-bootstrap';
-import 'styles/Carousel.css'; // Caminho absoluto a partir de src
+import '../styles/Carousel.css'; // Caminho relativo para garantir a resolução no build
 
 const Home = () => {
   return (
