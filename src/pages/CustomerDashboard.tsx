@@ -35,7 +35,7 @@ const CustomerDashboard = () => {
 
       const response = await fetch(`${apiUrl}/api/bookings/customer`, {
         headers: {
-          'auth-token': token,
+          'customer-auth-token': token,
         },
       });
 
