@@ -39,7 +39,9 @@ const Dashboard = () => {
 
     try {
       setLoading(true);
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bookings`, {
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
+
+      const response = await fetch(`${apiUrl}/api/bookings`, {
         headers: {
           'auth-token': token,
         },
@@ -85,7 +87,9 @@ const Dashboard = () => {
     if (window.confirm('Tem certeza que deseja excluir este agendamento?')) {
       const token = localStorage.getItem('auth-token');
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bookings/${id}`, {
+        const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
+
+        const response = await fetch(`${apiUrl}/api/bookings/${id}`, {
           method: 'DELETE',
           headers: {
             'auth-token': token!,
@@ -108,7 +112,9 @@ const Dashboard = () => {
   const handleStatusChange = async (id: string, newStatus: string) => {
     const token = localStorage.getItem('auth-token');
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bookings/${id}`, {
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
+
+      const response = await fetch(`${apiUrl}/api/bookings/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
