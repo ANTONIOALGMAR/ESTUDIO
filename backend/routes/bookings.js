@@ -154,7 +154,7 @@ router.delete('/:id', verifyToken, async (req, res) => {
 // Rota para atualizar um agendamento (Protegida)
 router.put('/:id', verifyToken, async (req, res) => {
   try {
-    if (!req.user.isAdmin) {
+    if (!req.user || req.user.isAdmin !== true) {
       return res.status(403).json({ message: 'Acesso negado. Apenas administradores podem atualizar agendamentos.' });
     }
     const updatedBooking = await Booking.findByIdAndUpdate(
