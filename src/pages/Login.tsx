@@ -33,14 +33,24 @@ const Login = () => {
       }
 
       // ✅ O backend retorna { token, user: { userType, ... } }
-      if (data.user?.userType === 'admin') {
+      if (data.token && data.user) {
+        // Salva o token e os dados do usuário de forma padronizada
         localStorage.setItem('auth-token', data.token);
-        navigate('/dashboard');
-      } else if (data.user?.userType === 'customer') {
-        localStorage.setItem('customer-auth-token', data.token);
-        navigate('/customer/dashboard');
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        // Redireciona com base no tipo de usuário
+        if (data.user.userType === 'admin') {
+          navigate('/dashboard');
+        } else if (data.user.userType === 'customer') {
+          navigate('/customer/dashboard');
+        } else {
+          // Limpa os dados em caso de tipo de usuário inesperado
+          localStorage.removeItem('auth-token');
+          localStorage.removeItem('user');
+          setError('Tipo de usuário desconhecido.');
+        }
       } else {
-        setError('Tipo de usuário desconhecido.');
+        throw new Error(data.message || 'Resposta inválida do servidor.');
       }
     } catch (err: any) {
       setError(err.message);
