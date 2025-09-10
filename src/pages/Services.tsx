@@ -56,7 +56,7 @@ const Services = () => {
       <h2 className="text-center mb-5">Nossos Serviços</h2>
       <Row>
         {services.map((service, index) => (
-          <Col sm={12} md={4} className="mb-4" key={index}>
+          <Col xs={12} sm={12} md={6} lg={4} className="mb-4" key={index}>
             <Card className="h-100 text-center" bg="dark" text="white">
               <Card.Body>
                 <div className="mb-3">{service.icon}</div>

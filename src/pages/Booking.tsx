@@ -243,19 +243,19 @@ const Booking = () => {
           <>
             <h4 className="mt-4">Endereço de Retirada e Entrega</h4>
             <Row className="mb-3">
-              <Form.Group as={Col} sm={4} controlId="formGridCep">
+              <Form.Group as={Col} md={4} sm={12} controlId="formGridCep">
                 <Form.Label>CEP</Form.Label>
                 <Form.Control type="text" placeholder="Digite o CEP" value={cep} onChange={handleCepChange} onBlur={handleCepBlur} onKeyDown={handleCepKeyDown} maxLength={9} />
               </Form.Group>
             </Row>
             <Row className="mb-3">
-              <Form.Group as={Col} controlId="formGridAddress">
+              <Form.Group as={Col} sm={12} controlId="formGridAddress">
                 <Form.Label>Endereço</Form.Label>
                 <Form.Control type="text" placeholder="Rua, Avenida..." value={address} onChange={e => setAddressState(e.target.value)} />
               </Form.Group>
             </Row>
             <Row className="mb-3">
-              <Form.Group as={Col} sm={4} controlId="formGridNumber">
+              <Form.Group as={Col} md={4} sm={12} className="mb-3 mb-md-0">
                 <Form.Label>Número</Form.Label>
                 <Form.Control type="text" placeholder="Nº" value={number} onChange={e => setNumber(e.target.value)} />
               </Form.Group>
@@ -265,11 +265,11 @@ const Booking = () => {
               </Form.Group>
             </Row>
             <Row className="mb-3">
-              <Form.Group as={Col} controlId="formGridNeighborhood">
+              <Form.Group as={Col} md={6} sm={12} className="mb-3 mb-md-0">
                 <Form.Label>Bairro</Form.Label>
                 <Form.Control type="text" value={neighborhood} onChange={e => setNeighborhood(e.target.value)} />
               </Form.Group>
-              <Form.Group as={Col} controlId="formGridCity">
+              <Form.Group as={Col} md={6} sm={12}>
                 <Form.Label>Cidade</Form.Label>
                 <Form.Control type="text" value={city} onChange={e => setCity(e.target.value)} />
               </Form.Group>
