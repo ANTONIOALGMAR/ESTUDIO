@@ -10,11 +10,26 @@ const app = express();
 const port = process.env.PORT || 5001;
 
 // Determine allowed origins based on environment
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [process.env.FRONTEND_URL_PROD] // e.g., 'https://estudio-frontend-v1zk.onrender.com'
-  : ['http://localhost:3000'];
+const allowedOrigins = [
+  'http://localhost:3000', // Desenvolvimento local
+];
+if (process.env.NODE_ENV === 'production' && process.env.FRONTEND_URL_PROD) {
+  allowedOrigins.push(process.env.FRONTEND_URL_PROD); // URL de produção principal
+}
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Permitir requisições sem 'origin' (como apps mobile ou curl) ou se a origem estiver na lista
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS: A origem '${origin}' foi bloqueada.`);
+      callback(new Error('Não permitido por CORS'));
+    }
+  }
+};
 // Middleware
-app.use(cors({ origin: allowedOrigins }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // MongoDB Connection
