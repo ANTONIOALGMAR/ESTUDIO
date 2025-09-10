@@ -4,6 +4,8 @@ const Customer = require('../models/Customer.model'); // Customer User
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key'; // Fallback for safety
+
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -15,7 +17,7 @@ router.post('/login', async (req, res) => {
       const validPass = await bcrypt.compare(password, user.password);
       console.log('validPass (Admin):', validPass);
       if (validPass) {
-        const token = jwt.sign({ id: user._id, isAdmin: true }, 'your_jwt_secret_key', { expiresIn: '1h' });
+        const token = jwt.sign({ id: user._id, isAdmin: true }, JWT_SECRET, { expiresIn: '1h' });
         return res.header('auth-token', token).json({ token, userType: 'admin' });
       }
     }
@@ -27,7 +29,7 @@ router.post('/login', async (req, res) => {
       const validPass = await bcrypt.compare(password, customer.password);
       console.log('validPass (Cliente):', validPass);
       if (validPass) {
-        const token = jwt.sign({ id: customer._id, isCustomer: true }, 'your_jwt_secret_key', { expiresIn: '1h' });
+        const token = jwt.sign({ id: customer._id, isCustomer: true }, JWT_SECRET, { expiresIn: '1h' });
         return res.header('customer-auth-token', token).json({ token, userType: 'customer' });
       }
     }
@@ -37,7 +39,7 @@ router.post('/login', async (req, res) => {
 
   } catch (error) {
     console.error('ERRO NO LOGIN UNIFICADO:', error);
-    res.status(500).json({ message: 'Erro no processo de login.', error });
+    res.status(500).json({ message: 'Erro no processo de login.' });
   }
 });
 
@@ -78,7 +80,7 @@ router.post('/register', async (req, res) => {
 
   } catch (error) {
     console.error('ERRO NO REGISTRO UNIFICADO:', error);
-    res.status(500).json({ message: 'Erro ao registrar usuário.', error });
+    res.status(500).json({ message: 'Erro ao registrar usuário.' });
   }
 });
 

@@ -5,6 +5,8 @@ const verifyToken = require('../middleware/verifyToken');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs'); // Importa o bcrypt
 
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key'; // Fallback for safety
+
 // Rota para criar um novo agendamento (Pública)
 router.post('/', async (req, res) => {
   try {
@@ -48,13 +50,13 @@ router.post('/', async (req, res) => {
         customerId = customer._id;
       }
       // Gera token para o cliente
-      customerToken = jwt.sign({ id: customer._id, isCustomer: true }, 'your_jwt_secret_key', { expiresIn: '1h' });
+      customerToken = jwt.sign({ id: customer._id, isCustomer: true }, JWT_SECRET, { expiresIn: '1h' });
     } else {
       // Se a senha não for fornecida, verifica se já existe um token de cliente logado
       const token = req.header('auth-token');
       if (token) {
         try {
-          const verified = jwt.verify(token, 'your_jwt_secret_key');
+          const verified = jwt.verify(token, JWT_SECRET);
           if (verified.isCustomer) {
             customerId = verified.id;
           }
@@ -85,7 +87,7 @@ router.post('/', async (req, res) => {
 
   } catch (error) {
     console.error('ERRO AO CRIAR AGENDAMENTO:', error);
-    res.status(500).json({ message: 'Erro ao criar agendamento.', error });
+    res.status(500).json({ message: 'Erro ao criar agendamento.' });
   }
 });
 
@@ -95,7 +97,7 @@ router.get('/', verifyToken, async (req, res) => {
     const bookings = await Booking.find().sort({ createdAt: -1 }); // Ordena pelos mais recentes
     res.json(bookings);
   } catch (error) {
-    res.status(500).json({ message: 'Erro ao buscar agendamentos.', error });
+    res.status(500).json({ message: 'Erro ao buscar agendamentos.' });
   }
 });
 
@@ -108,7 +110,7 @@ router.get('/customer', verifyToken, async (req, res) => {
     const customerBookings = await Booking.find({ customerId: req.user.id }).sort({ createdAt: -1 });
     res.json(customerBookings);
   } catch (error) {
-    res.status(500).json({ message: 'Erro ao buscar agendamentos do cliente.', error });
+    res.status(500).json({ message: 'Erro ao buscar agendamentos do cliente.' });
   }
 });
 
@@ -119,7 +121,7 @@ router.delete('/:id', verifyToken, async (req, res) => {
     if (!removedBooking) return res.status(404).json({ message: "Agendamento não encontrado." });
     res.json({ message: 'Agendamento deletado com sucesso.' });
   } catch (error) {
-    res.status(500).json({ message: 'Erro ao deletar agendamento.', error });
+    res.status(500).json({ message: 'Erro ao deletar agendamento.' });
   }
 });
 
@@ -134,7 +136,7 @@ router.put('/:id', verifyToken, async (req, res) => {
     if (!updatedBooking) return res.status(404).json({ message: "Agendamento não encontrado." });
     res.json(updatedBooking);
   } catch (error) {
-    res.status(500).json({ message: 'Erro ao atualizar agendamento.', error });
+    res.status(500).json({ message: 'Erro ao atualizar agendamento.' });
   }
 });
 
@@ -163,7 +165,7 @@ router.post('/associate-customer', verifyToken, async (req, res) => {
 
   } catch (error) {
     console.error('ERRO AO ASSOCIAR AGENDAMENTOS:', error);
-    res.status(500).json({ message: 'Erro ao associar agendamentos.', error });
+    res.status(500).json({ message: 'Erro ao associar agendamentos.' });
   }
 });
 
