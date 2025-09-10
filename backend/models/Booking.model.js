@@ -20,14 +20,24 @@ const bookingSchema = new mongoose.Schema({
   car: String,
   licensePlate: String,
   service: {
-    type: String,
+    type: [String], // Alterado para aceitar um array de strings
     required: true
   },
   date: {
     type: Date,
     required: true
   },
-  address: String,
+  address: { // Alterado para aceitar um objeto de endereço
+    type: {
+      cep: String,
+      street: String,
+      number: String,
+      complement: String,
+      neighborhood: String,
+      city: String,
+    },
+    required: false // O endereço só é necessário se needsPickup for true
+  },
   needsPickup: Boolean,
   status: {
     type: String,
