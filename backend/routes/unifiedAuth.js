@@ -4,7 +4,27 @@ const Customer = require('../models/Customer.model'); // Customer User
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key'; // Fallback for safety
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
+
+// Middleware para extrair e verificar o token
+const extractUserFromToken = async (req, res, next) => {
+  const token = req.header('auth-token');
+  if (!token) return next(); // Continua sem usuário se não houver token
+
+  try {
+    const verified = jwt.verify(token, JWT_SECRET);
+    let user;
+    if (verified.isAdmin) {
+      user = await User.findById(verified.id).select('-password');
+    } else if (verified.isCustomer) {
+      user = await Customer.findById(verified.id).select('-password');
+    }
+    req.user = user; // Anexa o usuário à requisição
+  } catch (err) {
+    // Token inválido ou expirado, simplesmente ignora
+  }
+  next();
+};
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
@@ -19,8 +39,8 @@ router.post('/login', async (req, res) => {
       if (!validPass) {
         return res.status(400).json({ message: 'Email ou senha inválidos.' });
       }
-      const token = jwt.sign({ id: adminUser._id, isAdmin: true }, JWT_SECRET, { expiresIn: '1h' });
-      return res.json({ token, userType: 'admin' });
+      const token = jwt.sign({ id: adminUser._id, isAdmin: true }, JWT_SECRET, { expiresIn: '24h' });
+      return res.json({ token, user: { id: adminUser._id, fullName: adminUser.fullName, email: adminUser.email, userType: 'admin' } });
     }
 
     // Se não for Admin, verifica se é um Cliente
@@ -30,8 +50,8 @@ router.post('/login', async (req, res) => {
       if (!validPass) {
         return res.status(400).json({ message: 'Email ou senha inválidos.' });
       }
-      const token = jwt.sign({ id: customerUser._id, isCustomer: true }, JWT_SECRET, { expiresIn: '1h' });
-      return res.json({ token, userType: 'customer' });
+      const token = jwt.sign({ id: customerUser._id, isCustomer: true }, JWT_SECRET, { expiresIn: '24h' });
+      return res.json({ token, user: { id: customerUser._id, fullName: customerUser.fullName, email: customerUser.email, userType: 'customer' } });
     }
 
     // Se o email não for encontrado em nenhuma coleção
@@ -41,6 +61,17 @@ router.post('/login', async (req, res) => {
     console.error('ERRO NO LOGIN UNIFICADO:', error);
     res.status(500).json({ message: 'Erro no processo de login.' });
   }
+});
+
+// Nova rota para verificar um token e retornar os dados do usuário
+router.get('/verify-token', extractUserFromToken, (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Token inválido ou sessão expirada.' });
+  }
+  // Adiciona o userType com base na estrutura do usuário
+  const userType = req.user.constructor.modelName.toLowerCase(); // 'user' se torna 'admin', 'customer' fica 'customer'
+  const finalUserType = userType === 'user' ? 'admin' : userType;
+  res.json({ user: { ...req.user.toObject(), userType: finalUserType } });
 });
 
 // Rota de Registro Unificado
