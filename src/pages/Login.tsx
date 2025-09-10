@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, Form, Button, Alert, InputGroup } from 'react-bootstrap';
+import { Container, Form, Button, Alert, InputGroup, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
@@ -8,12 +8,14 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false); // Estado para o carregamento
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-
+    setLoading(true); // Inicia o carregamento
+    
     // Garante que a URL da API seja a de produção, mesmo que a variável de ambiente falhe.
     const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
 
@@ -41,6 +43,11 @@ const Login = () => {
         localStorage.removeItem('auth-token');
         localStorage.removeItem('customer-auth-token');
         
+        // Salva o token e os dados do usuário para a nova sessão
+        const tokenKey = data.user.userType === 'admin' ? 'auth-token' : 'customer-auth-token';
+        localStorage.setItem(tokenKey, data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+
         // Redireciona com base no tipo de usuário
         if (data.user.userType === 'admin') {
           navigate('/dashboard');
@@ -57,6 +64,8 @@ const Login = () => {
       }
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setLoading(false); // Finaliza o carregamento
     }
   };
 
@@ -95,8 +104,13 @@ const Login = () => {
           </InputGroup>
         </Form.Group>
 
-        <Button variant="warning" type="submit">
-          Entrar
+        <Button variant="warning" type="submit" disabled={loading}>
+          {loading ? (
+            <>
+              <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
+              <span className="visually-hidden">Carregando...</span>
+            </>
+          ) : 'Entrar'}
         </Button>
       </Form>
     </Container>
