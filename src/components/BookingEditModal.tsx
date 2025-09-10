@@ -84,7 +84,7 @@ const BookingEditModal: React.FC<BookingEditModalProps> = ({ show, onHide, booki
     const token = localStorage.getItem('auth-token');
 
     try {
-      const response = await fetch(`process.env.REACT_APP_API_URL/api/bookings/${formData._id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bookings/${formData._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
