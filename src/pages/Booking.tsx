@@ -127,7 +127,14 @@ const Booking = () => {
       service: services,
       date,
       needsPickup: showAddress,
-      address: showAddress ? `${address}, ${number}, ${complement} - ${neighborhood}, ${city} - CEP: ${cep}` : undefined,
+      address: showAddress ? {
+        cep,
+        street: address,
+        number,
+        complement,
+        neighborhood,
+        city,
+      } : undefined,
     };
 
     if (createAccount) {
