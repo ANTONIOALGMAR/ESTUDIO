@@ -31,7 +31,9 @@ const CustomerDashboard = () => {
 
     try {
       setLoading(true); // Added this line
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bookings/customer`, {
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
+
+      const response = await fetch(`${apiUrl}/api/bookings/customer`, {
         headers: {
           'auth-token': token,
         },
@@ -70,7 +72,9 @@ const CustomerDashboard = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bookings/associate-customer`, {
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
+
+      const response = await fetch(`${apiUrl}/api/bookings/associate-customer`, {
         method: 'POST',
         headers: {
           'auth-token': token,
