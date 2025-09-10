@@ -159,7 +159,7 @@ router.put('/:id', verifyToken, async (req, res) => {
     }
     const updatedBooking = await Booking.findByIdAndUpdate(
       req.params.id,
-      { $set: req.body },
+      req.body, // Remove o operador $set para permitir a conversão de tipo do Mongoose
       { new: true }
     );
     if (!updatedBooking) return res.status(404).json({ message: "Agendamento não encontrado." });
