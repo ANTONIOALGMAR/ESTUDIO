@@ -83,8 +83,11 @@ const CustomerDashboard = () => {
       }
 
       const data = await response.json();
-      alert(data.message);
-      fetchCustomerBookings(); // Recarrega os agendamentos
+      // Atualiza o estado com a lista de agendamentos retornada pela API.
+      if (data.bookings) {
+        setBookings(data.bookings);
+        setShowAssociateButton(data.bookings.length === 0);
+      }
 
     } catch (err: any) {
       setError(err.message);

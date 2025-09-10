@@ -190,7 +190,10 @@ router.post('/associate-customer', verifyToken, async (req, res) => {
       { $set: { customerId: customerId } }
     );
 
-    res.json({ message: `Agendamentos associados: ${result.modifiedCount}` });
+    // Após associar, busca e retorna a lista atualizada de agendamentos do cliente.
+    const updatedBookings = await Booking.find({ customerId: customerId }).sort({ createdAt: -1 });
+
+    res.json({ message: `Agendamentos associados: ${result.modifiedCount}`, bookings: updatedBookings });
 
   } catch (error) {
     console.error('ERRO AO ASSOCIAR AGENDAMENTOS:', error);
