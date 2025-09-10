@@ -14,11 +14,11 @@ const About = () => {
       </p>
       <p>
         Para sua maior comodidade, expandimos nosso atendimento e agora contamos com duas unidades prontas para recebê-lo:
-        <ul>
-          <li><strong>Posto 1:</strong> Rua Zila Ferreira da Silva, n. 52</li>
-          <li><strong>Posto 2:</strong> Rua Crispim Rodrigues de Andrade, 267</li>
-        </ul>
       </p>
+      <ul>
+        <li><strong>Posto 1:</strong> Rua Zila Ferreira da Silva, n. 52</li>
+        <li><strong>Posto 2:</strong> Rua Crispim Rodrigues de Andrade, 267</li>
+      </ul>
       <p>
         Sabemos que a rotina é corrida, por isso oferecemos o serviço de <strong>Leva e Trás</strong>. Cuidamos do seu carro enquanto você cuida dos seus compromissos.
       </p>

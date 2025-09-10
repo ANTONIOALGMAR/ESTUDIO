@@ -169,15 +169,15 @@ const Booking = () => {
       {feedback && <Alert variant={feedback.type}>{feedback.message}</Alert>}
 
       <Form onSubmit={handleSubmit}>
-        <Row className="mb-3">
-          <Form.Group as={Col} controlId="formGridFullName">
+        <Row>
+          <Form.Group as={Col} sm={12} className="mb-3" controlId="formGridFullName">
             <Form.Label>Nome Completo</Form.Label>
             <Form.Control type="text" placeholder="Digite seu nome completo" value={fullName} onChange={e => setFullName(e.target.value)} required />
           </Form.Group>
         </Row>
 
         <Row className="mb-3">
-          <Form.Group as={Col} controlId="formGridEmail">
+          <Form.Group as={Col} md={6} sm={12} className="mb-3 mb-md-0">
             <Form.Label>Email</Form.Label>
             <Form.Control type="email" placeholder="Digite seu email" value={email} onChange={e => setEmail(e.target.value)} required />
           </Form.Group>
@@ -189,12 +189,12 @@ const Booking = () => {
         </Row>
 
         <Row className="mb-3">
-          <Form.Group as={Col} controlId="formGridCar">
+          <Form.Group as={Col} md={6} sm={12} className="mb-3 mb-md-0">
             <Form.Label>Carro</Form.Label>
             <Form.Control type="text" placeholder="Ex: Honda Civic" value={car} onChange={e => setCar(e.target.value)} />
           </Form.Group>
 
-          <Form.Group as={Col} controlId="formGridLicensePlate">
+          <Form.Group as={Col} md={6} sm={12}>
             <Form.Label>Placa</Form.Label>
             <Form.Control type="text" placeholder="Ex: ABC-1234" value={licensePlate} onChange={e => setLicensePlate(e.target.value)} />
           </Form.Group>
@@ -217,7 +217,7 @@ const Booking = () => {
             }</div>
           </Form.Group>
 
-          <Form.Group as={Col} controlId="formGridDate">
+          <Form.Group as={Col} md={6} sm={12} className="mt-3 mt-md-0">
             <Form.Label>Data do Agendamento</Form.Label>
             <Form.Control type="date" value={date} onChange={e => setDate(e.target.value)} required />
           </Form.Group>

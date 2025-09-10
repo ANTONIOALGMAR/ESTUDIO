@@ -187,7 +187,7 @@ const Dashboard = () => {
       ) : filteredBookings.length === 0 ? (
         <Alert variant="warning">Nenhum resultado encontrado para "{searchTerm}".</Alert>
       ) : (
-        <Table striped bordered hover responsive>
+        <Table striped bordered hover responsive="md">
           <thead>
             <tr>
               <th>Data do Pedido</th>
