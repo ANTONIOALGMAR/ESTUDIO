@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const createError = require('http-errors');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
@@ -8,8 +9,12 @@ const mongoose = require('mongoose');
 const app = express();
 const port = process.env.PORT || 5001;
 
+// Determine allowed origins based on environment
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [process.env.FRONTEND_URL_PROD] // e.g., 'https://estudio-frontend-v1zk.onrender.com'
+  : ['http://localhost:3000'];
 // Middleware
-app.use(cors({ origin: ['http://localhost:3000', 'https://estudio-frontend-v1zk.onrender.com'] })); // Configuração explícita do CORS
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
 // MongoDB Connection
@@ -33,6 +38,21 @@ app.use('/api/bookings', bookingRoutes);
 // Simple test route
 app.get('/', (req, res) => {
     res.send('Backend do Studio Carvalho está no ar!');
+});
+
+// Catch 404 and forward to error handler
+app.use((req, res, next) => {
+  next(createError(404, 'A rota solicitada não foi encontrada.'));
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  // Set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+  // Render the error page
+  res.status(err.status || 500).json({ message: err.message || 'Ocorreu um erro interno no servidor.' });
 });
 
 // Start the server

@@ -5,7 +5,47 @@ const verifyToken = require('../middleware/verifyToken');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs'); // Importa o bcrypt
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key'; // Fallback for safety
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key'; // Chave secreta para JWT, com um fallback de segurança
+
+/**
+ * Encontra um cliente existente pelo e-mail ou cria um novo.
+ * @param {string} email - E-mail do cliente.
+ * @param {string} password - Senha do cliente.
+ * @param {string} fullName - Nome completo do cliente.
+ * @returns {Promise<{customer: object, isNew: boolean}>}
+ */
+async function findOrCreateCustomer(email, password, fullName) {
+  let customer = await Customer.findOne({ email });
+  let isNew = false;
+
+  if (customer) {
+    // Cliente existe, valida a senha
+    const validPass = await bcrypt.compare(password, customer.password);
+    if (!validPass) {
+      // Lança um erro se a senha estiver incorreta
+      const error = new Error('Email já cadastrado com outra senha. Por favor, faça login ou use outro email.');
+      error.status = 400;
+      throw error;
+    }
+  } else {
+    // Cliente não existe, cria um novo
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    const newCustomer = new Customer({
+      fullName,
+      email,
+      password: hashedPassword,
+    });
+    customer = await newCustomer.save();
+    isNew = true;
+  }
+
+  return { customer, isNew };
+}
+
+function generateCustomerToken(customerId) {
+  return jwt.sign({ id: customerId, isCustomer: true }, JWT_SECRET, { expiresIn: '1h' });
+}
 
 // Rota para criar um novo agendamento (Pública)
 router.post('/', async (req, res) => {
@@ -20,40 +60,22 @@ router.post('/', async (req, res) => {
       date,
       address,
       needsPickup,
-      password // Recebe a senha, se fornecida
+      password // Recebe a senha, se for fornecida durante o agendamento
     } = req.body;
 
     let customerId = null;
     let customerToken = null;
 
-    // Lógica para associar ou criar cliente se a senha for fornecida
+    // Se uma senha for fornecida, o usuário está tentando se registrar ou fazer login.
     if (password) {
-      let customer = await Customer.findOne({ email });
-
-      if (customer) {
-        // Cliente existe, tenta fazer login
-        const validPass = await bcrypt.compare(password, customer.password);
-        if (!validPass && password) { // Apenas retorna erro se uma senha foi fornecida e está errada
-          return res.status(400).json({ message: 'Email já cadastrado com outra senha. Por favor, faça login ou use outro email.' });
-        }
-        customerId = customer._id;
-      } else {
-        // Cliente não existe, cria um novo
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        const newCustomer = new Customer({
-          fullName, // Assume que o fullName do agendamento é o do cliente
-          email,
-          password: hashedPassword,
-        });
-        customer = await newCustomer.save();
-        customerId = customer._id;
-      }
-      // Gera token para o cliente
-      customerToken = jwt.sign({ id: customer._id, isCustomer: true }, JWT_SECRET, { expiresIn: '1h' });
+      const { customer } = await findOrCreateCustomer(email, password, fullName);
+      customerId = customer._id;
+      customerToken = generateCustomerToken(customerId);
+    } else {
+      // Se não houver senha, verifica se há um token de cliente logado
     }
 
-    // Se customerId ainda for nulo, tenta obter do token (se o usuário já estiver logado)
+    // Se o customerId ainda for nulo, tenta obtê-lo do token (caso o usuário já esteja logado)
     if (!customerId) {
       const token = req.header('auth-token') || req.header('customer-auth-token');
       if (token) {
@@ -61,7 +83,7 @@ router.post('/', async (req, res) => {
           const verified = jwt.verify(token, JWT_SECRET);
           if (verified.isCustomer) customerId = verified.id;
         } catch (err) {
-          // Token inválido ou expirado, ignora e continua sem associar
+          // Token inválido ou expirado. Ignora e continua sem associar o cliente.
           console.warn('Token inválido ou expirado fornecido ao criar agendamento.');
         }
       }
@@ -77,25 +99,25 @@ router.post('/', async (req, res) => {
       date,
       address,
       needsPickup,
-      customerId, // Adiciona o customerId
-      status: 'aguardando', // Status inicial
+      customerId, // Associa o agendamento ao cliente, se houver
+      status: 'aguardando', // Define o status inicial do agendamento
     });
 
     const savedBooking = await newBooking.save();
 
-    // Retorna o agendamento e o token do cliente, se houver
+    // Retorna o agendamento salvo e o token do cliente, se um foi gerado
     res.status(201).json({ booking: savedBooking, customerToken });
 
   } catch (error) {
     console.error('ERRO AO CRIAR AGENDAMENTO:', error);
-    res.status(500).json({ message: 'Erro ao criar agendamento.' });
+    res.status(error.status || 500).json({ message: error.message || 'Erro ao criar agendamento.' });
   }
 });
 
 // Rota para buscar todos os agendamentos (Protegida)
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const bookings = await Booking.find().sort({ createdAt: -1 }); // Ordena pelos mais recentes
+    const bookings = await Booking.find().sort({ createdAt: -1 }); // Ordena do mais recente para o mais antigo
     res.json(bookings);
   } catch (error) {
     res.status(500).json({ message: 'Erro ao buscar agendamentos.' });
