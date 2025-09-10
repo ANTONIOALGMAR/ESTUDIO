@@ -1,13 +1,15 @@
 import React from 'react';
 import { Carousel } from 'react-bootstrap';
+import '../styles/Carousel.css'; // Importa o novo CSS
 
 const Home = () => {
   return (
     <Carousel>
       <Carousel.Item>
         <img
-          className="d-block w-100 carousel-image-focused"
-          src="https://images.pexels.com/photos/120049/pexels-photo-120049.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+          className="d-block w-100"
+          // URL otimizada para diferentes tamanhos de tela
+          src="https://images.pexels.com/photos/120049/pexels-photo-120049.jpeg?auto=compress&cs=tinysrgb&w=800"
           alt="Polimento Técnico"
         />
         <Carousel.Caption>
@@ -17,8 +19,8 @@ const Home = () => {
       </Carousel.Item>
       <Carousel.Item>
         <img
-          className="d-block w-100 carousel-image-focused"
-          src="https://images.pexels.com/photos/1545743/pexels-photo-1545743.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+          className="d-block w-100"
+          src="https://images.pexels.com/photos/1545743/pexels-photo-1545743.jpeg?auto=compress&cs=tinysrgb&w=800"
           alt="Restauração de Pintura"
         />
         <Carousel.Caption>
@@ -28,8 +30,8 @@ const Home = () => {
       </Carousel.Item>
       <Carousel.Item>
         <img
-          className="d-block w-100 carousel-image-focused"
-          src="https://images.pexels.com/photos/3802510/pexels-photo-3802510.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+          className="d-block w-100"
+          src="https://images.pexels.com/photos/3802510/pexels-photo-3802510.jpeg?auto=compress&cs=tinysrgb&w=800"
           alt="Lavagem Detalhada"
         />
         <Carousel.Caption>
@@ -39,8 +41,8 @@ const Home = () => {
       </Carousel.Item>
       <Carousel.Item>
         <img
-          className="d-block w-100 carousel-image-focused"
-          src="https://images.pexels.com/photos/3729464/pexels-photo-3729464.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+          className="d-block w-100"
+          src="https://images.pexels.com/photos/3729464/pexels-photo-3729464.jpeg?auto=compress&cs=tinysrgb&w=800"
           alt="Manutenção Preventiva"
         />
         <Carousel.Caption>
@@ -50,8 +52,8 @@ const Home = () => {
       </Carousel.Item>
       <Carousel.Item>
         <img
-          className="d-block w-100 carousel-image-focused"
-          src="https://images.pexels.com/photos/1715193/pexels-photo-1715193.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+          className="d-block w-100"
+          src="https://images.pexels.com/photos/1715193/pexels-photo-1715193.jpeg?auto=compress&cs=tinysrgb&w=800"
           alt="Serviços para Motos"
         />
         <Carousel.Caption>
