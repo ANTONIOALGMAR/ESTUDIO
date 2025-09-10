@@ -31,7 +31,7 @@ const CustomerDashboard = () => {
 
     try {
       setLoading(true); // Added this line
-      const response = await fetch('https://estudio-backend-skzl.onrender.com', {
+      const response = await fetch('process.env.REACT_APP_API_URL', {
         headers: {
           'auth-token': token,
         },
