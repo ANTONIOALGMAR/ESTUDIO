@@ -73,7 +73,7 @@ const CustomerDashboard = () => {
       const response = await fetch(`${apiUrl}/api/bookings/associate-customer`, {
         method: 'POST',
         headers: {
-          'auth-token': token,
+          'customer-auth-token': token,
           'Content-Type': 'application/json',
         },
       });
