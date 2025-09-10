@@ -1,6 +1,6 @@
 import React from 'react';
 import { Carousel } from 'react-bootstrap';
-import '../styles/Carousel.css'; // Caminho relativo para garantir a resolução no build
+import './Carousel.css'; // Importando o CSS da mesma pasta
 
 const Home = () => {
   return (
