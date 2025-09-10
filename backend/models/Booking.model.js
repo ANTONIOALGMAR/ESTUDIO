@@ -1,33 +1,48 @@
 const mongoose = require('mongoose');
 
-const BookingSchema = new mongoose.Schema({
-  fullName: { type: String, required: true },
-  email: { type: String, required: true },
-  phone: { type: String, required: true },
-  car: { type: String },
-  licensePlate: { type: String },
-  service: { type: [String], required: true },
-  date: { type: Date, required: true },
-  address: {
-    cep: String,
-    street: String,
-    number: String,
-    complement: String,
-    neighborhood: String,
-    city: String,
+const bookingSchema = new mongoose.Schema({
+  fullName: {
+    type: String,
+    required: true,
+    trim: true
   },
-  needsPickup: { type: Boolean, default: false },
+  email: {
+    type: String,
+    required: true,
+    trim: true,
+    lowercase: true
+  },
+  phone: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  car: String,
+  licensePlate: String,
+  service: {
+    type: String,
+    required: true
+  },
+  date: {
+    type: Date,
+    required: true
+  },
+  address: String,
+  needsPickup: Boolean,
   status: {
     type: String,
-    enum: ['aguardando', 'em andamento', 'pronto', 'entregue'],
-    default: 'aguardando',
+    default: 'aguardando' // ex: aguardando, confirmado, concluído, cancelado
   },
   customerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Customer',
-  },
-}, {
-  timestamps: true,
-});
+    ref: 'Customer'
+  }
+}, { timestamps: true });
 
-module.exports = mongoose.model('Booking', BookingSchema);
+// Adiciona um índice composto para otimizar buscas por email e customerId.
+// Isso acelera muito a rota /associate-customer.
+bookingSchema.index({ email: 1, customerId: 1 });
+
+const Booking = mongoose.model('Booking', bookingSchema);
+
+module.exports = Booking;
