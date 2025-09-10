@@ -39,14 +39,10 @@ const CustomerDashboard = () => {
         },
       });
 
-      if (response.status === 403 || response.status === 401) { // 403 Forbidden, 401 Unauthorized
+      if (!response.ok) {
         localStorage.removeItem('customer-auth-token');
         navigate('/customer/login');
         return;
-      }
-
-      if (!response.ok) {
-        throw new Error('Falha ao buscar seus agendamentos.');
       }
 
       const data = await response.json();

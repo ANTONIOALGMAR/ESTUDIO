@@ -10,11 +10,20 @@ const app = express();
 const port = process.env.PORT || 5001;
 
 // Middleware
+const allowedOrigins = [
+  'https://estudio-frontend-v1zk.onrender.com',
+  'http://localhost:3000' // Adicione para desenvolvimento local, se necessário
+];
 app.use(cors({
-  origin: "https://estudio-frontend-v1zk.onrender.com", // seu frontend no Render
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  allowedHeaders: ["Content-Type", "auth-token", "customer-auth-token"] // Garanta que os headers de token sejam permitidos
 }));
 app.use(express.json());
 

@@ -127,7 +127,7 @@ router.get('/', verifyToken, async (req, res) => {
 // Rota para buscar agendamentos de um cliente específico (Protegida)
 router.get('/customer', verifyToken, async (req, res) => {
   try {
-    if (!req.user || !req.user.isCustomer) {
+    if (!req.user || req.user.isCustomer !== true) { // Verificação mais estrita
       return res.status(403).json({ message: 'Acesso negado. Apenas clientes podem acessar esta rota.' });
     }
     const customerBookings = await Booking.find({ customerId: req.user.id }).sort({ createdAt: -1 });
