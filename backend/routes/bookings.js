@@ -33,7 +33,7 @@ router.post('/', async (req, res) => {
       if (customer) {
         // Cliente existe, tenta fazer login
         const validPass = await bcrypt.compare(password, customer.password);
-        if (!validPass) {
+        if (!validPass && password) { // Apenas retorna erro se uma senha foi fornecida e está errada
           return res.status(400).json({ message: 'Email já cadastrado com outra senha. Por favor, faça login ou use outro email.' });
         }
         customerId = customer._id;
@@ -51,17 +51,18 @@ router.post('/', async (req, res) => {
       }
       // Gera token para o cliente
       customerToken = jwt.sign({ id: customer._id, isCustomer: true }, JWT_SECRET, { expiresIn: '1h' });
-    } else {
-      // Se a senha não for fornecida, verifica se já existe um token de cliente logado
-      const token = req.header('auth-token');
+    }
+
+    // Se customerId ainda for nulo, tenta obter do token (se o usuário já estiver logado)
+    if (!customerId) {
+      const token = req.header('auth-token') || req.header('customer-auth-token');
       if (token) {
         try {
           const verified = jwt.verify(token, JWT_SECRET);
-          if (verified.isCustomer) {
-            customerId = verified.id;
-          }
+          if (verified.isCustomer) customerId = verified.id;
         } catch (err) {
-          console.warn('Token inválido ou expirado ao criar agendamento, continuando sem customerId.');
+          // Token inválido ou expirado, ignora e continua sem associar
+          console.warn('Token inválido ou expirado fornecido ao criar agendamento.');
         }
       }
     }
@@ -117,6 +118,9 @@ router.get('/customer', verifyToken, async (req, res) => {
 // Rota para deletar um agendamento (Protegida)
 router.delete('/:id', verifyToken, async (req, res) => {
   try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: 'Acesso negado. Apenas administradores podem deletar agendamentos.' });
+    }
     const removedBooking = await Booking.findByIdAndDelete(req.params.id);
     if (!removedBooking) return res.status(404).json({ message: "Agendamento não encontrado." });
     res.json({ message: 'Agendamento deletado com sucesso.' });
@@ -128,6 +132,9 @@ router.delete('/:id', verifyToken, async (req, res) => {
 // Rota para atualizar um agendamento (Protegida)
 router.put('/:id', verifyToken, async (req, res) => {
   try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: 'Acesso negado. Apenas administradores podem atualizar agendamentos.' });
+    }
     const updatedBooking = await Booking.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },

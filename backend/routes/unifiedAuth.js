@@ -8,33 +8,33 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key'; // Fallback 
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email e senha são obrigatórios.' });
+  }
   try {
-    // Tenta autenticar como Admin
-    let user = await User.findOne({ email });
-    if (user) {
-      console.log('Tentando login como Admin para:', email);
-      const validPass = await bcrypt.compare(password, user.password);
-      console.log('validPass (Admin):', validPass);
-      if (validPass) {
-        const token = jwt.sign({ id: user._id, isAdmin: true }, JWT_SECRET, { expiresIn: '1h' });
-        return res.header('auth-token', token).json({ token, userType: 'admin' });
+    // Verifica se o usuário é um Admin
+    const adminUser = await User.findOne({ email });
+    if (adminUser) {
+      const validPass = await bcrypt.compare(password, adminUser.password);
+      if (!validPass) {
+        return res.status(400).json({ message: 'Email ou senha inválidos.' });
       }
+      const token = jwt.sign({ id: adminUser._id, isAdmin: true }, JWT_SECRET, { expiresIn: '1h' });
+      return res.json({ token, userType: 'admin' });
     }
 
-    // Se não for Admin ou senha inválida, tenta autenticar como Cliente
-    let customer = await Customer.findOne({ email });
-    if (customer) {
-      console.log('Tentando login como Cliente para:', email);
-      const validPass = await bcrypt.compare(password, customer.password);
-      console.log('validPass (Cliente):', validPass);
-      if (validPass) {
-        const token = jwt.sign({ id: customer._id, isCustomer: true }, JWT_SECRET, { expiresIn: '1h' });
-        return res.header('customer-auth-token', token).json({ token, userType: 'customer' });
+    // Se não for Admin, verifica se é um Cliente
+    const customerUser = await Customer.findOne({ email });
+    if (customerUser) {
+      const validPass = await bcrypt.compare(password, customerUser.password);
+      if (!validPass) {
+        return res.status(400).json({ message: 'Email ou senha inválidos.' });
       }
+      const token = jwt.sign({ id: customerUser._id, isCustomer: true }, JWT_SECRET, { expiresIn: '1h' });
+      return res.json({ token, userType: 'customer' });
     }
 
-    // Se nenhum dos dois, credenciais inválidas
+    // Se o email não for encontrado em nenhuma coleção
     res.status(400).json({ message: 'Email ou senha inválidos.' });
 
   } catch (error) {
