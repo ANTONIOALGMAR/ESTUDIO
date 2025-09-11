@@ -144,7 +144,7 @@ const AdminEmployees = () => {
                 <td>{user.fullName}</td>
                 <td>{user.email}</td>
                 <td>{user.role === 'admin' ? 'Administrador' : 'Funcionário'}</td>
-                <td>{new Date(user.createdAt).toLocaleDateString('pt-BR')}</td>
+                <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : 'N/A'}</td>
                 <td>
                   <Button variant="outline-secondary" size="sm" className="me-2" onClick={() => handleOpenModal(user)}>
                     Editar
