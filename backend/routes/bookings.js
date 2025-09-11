@@ -2,6 +2,7 @@ const router = require('express').Router();
 const Booking = require('../models/Booking.model');
 const Customer = require('../models/Customer.model'); // Importa o modelo Customer
 const verifyToken = require('../middleware/verifyToken');
+const verifyAdmin = require('../middleware/verifyAdmin'); // Importa o middleware de admin
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs'); // Importa o bcrypt
 
