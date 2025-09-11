@@ -25,12 +25,13 @@ const CustomerDashboard = () => {
   const fetchCustomerBookings = useCallback(async () => {
     const token = localStorage.getItem('customer-auth-token');
     if (!token) {
+      setError("Sessão não encontrada. Por favor, faça login novamente.");
       navigate('/customer/login');
       return;
     }
 
     try {
-      setLoading(true); // Added this line
+      setLoading(true);
       const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
 
       const response = await fetch(`${apiUrl}/api/bookings/customer`, {
@@ -40,6 +41,7 @@ const CustomerDashboard = () => {
       });
 
       if (!response.ok) {
+        // Se o token for inválido ou expirado, o servidor retornará 401 ou 403
         localStorage.removeItem('customer-auth-token');
         navigate('/customer/login');
         return;
@@ -47,13 +49,10 @@ const CustomerDashboard = () => {
 
       const data = await response.json();
       setBookings(data);
-      if (data.length === 0) { // Added this block
-        setShowAssociateButton(true);
-      } else {
-        setShowAssociateButton(false);
-      }
+      // Mostra o botão se não houver agendamentos, permitindo ao usuário tentar vincular agendamentos antigos.
+      setShowAssociateButton(data.length === 0);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Falha ao carregar agendamentos. Verifique sua conexão com a internet.');
     } finally {
       setLoading(false);
     }
@@ -88,7 +87,6 @@ const CustomerDashboard = () => {
         setBookings(data.bookings);
         setShowAssociateButton(data.bookings.length === 0);
       }
-
     } catch (err: any) {
       setError(err.message);
     }
@@ -104,7 +102,11 @@ const CustomerDashboard = () => {
   }
 
   if (error) {
-    return <Alert variant="danger">{error}</Alert>;
+    return (
+      <Container className="text-center mt-5">
+        <Alert variant="danger">{error}</Alert>
+      </Container>
+    );
   }
 
   return (
