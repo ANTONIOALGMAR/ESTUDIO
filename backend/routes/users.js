@@ -49,8 +49,17 @@ router.post('/', verifyAdmin, async (req, res) => {
 // ROTA DE ADMIN - Atualizar um usuário
 router.put('/:id', verifyAdmin, async (req, res) => {
   try {
+    const userId = req.params.id; // ID do usuário que está sendo atualizado
     const { fullName, email, password, role } = req.body;
     const updateFields = { fullName, email, role };
+
+    // 1. Verifica se o email já existe para OUTRO usuário
+    if (email) { // Só verifica se o email foi fornecido no body
+      const existingUser = await User.findOne({ email });
+      if (existingUser && existingUser._id.toString() !== userId) {
+        return res.status(400).json({ message: 'Email já cadastrado.' });
+      }
+    }
 
     // Se a senha for fornecida, faz o hash
     if (password) {
@@ -59,7 +68,7 @@ router.put('/:id', verifyAdmin, async (req, res) => {
     }
 
     const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
+      userId, // Usa o ID do usuário
       { $set: updateFields },
       { new: true, runValidators: true } // Retorna o documento atualizado e roda validadores
     ).select('-password'); // Não retorna a senha
