@@ -108,7 +108,7 @@ const Booking = () => {
     setPhone('');
     setCar('');
     setLicensePlate('');
-    setServices([]);
+    setServices([]); // Garante que os serviços sejam limpos
     setDate('');
     setCep('');
     setAddressState('');
