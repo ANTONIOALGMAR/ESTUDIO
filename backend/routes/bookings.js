@@ -201,4 +201,28 @@ router.post('/associate-customer', verifyToken, async (req, res) => {
   }
 });
 
+// Rota para buscar agendamentos filtrados (Protegida)
+router.get('/filtered', verifyAdmin, async (req, res) => {
+  try {
+    const { startDate, endDate, status } = req.query;
+    const query: any = {};
+
+    if (startDate) {
+      query.date = { ...query.date, $gte: new Date(startDate as string) };
+    }
+    if (endDate) {
+      query.date = { ...query.date, $lte: new Date(endDate as string) };
+    }
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    const filteredBookings = await Booking.find(query).sort({ date: -1 });
+    res.json(filteredBookings);
+  } catch (error) {
+    console.error('ERRO AO BUSCAR AGENDAMENTOS FILTRADOS:', error);
+    res.status(500).json({ message: 'Erro ao buscar agendamentos filtrados.' });
+  }
+});
+
 module.exports = router;
