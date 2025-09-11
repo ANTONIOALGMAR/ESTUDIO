@@ -151,7 +151,16 @@ const AdminServices = () => {
                   <Button variant="outline-secondary" size="sm" className="me-2" onClick={() => handleOpenModal(service)}>
                     Editar
                   </Button>
-                  <Button variant="outline-danger" size="sm" onClick={() => handleDeleteService(service._id)}>
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={() => {
+                      if (service._id) {
+                        handleDeleteService(service._id);
+                      }
+                    }}
+                    disabled={!service._id} // Desabilita o botão se não houver ID
+                  >
                     Excluir
                   </Button>
                 </td>
