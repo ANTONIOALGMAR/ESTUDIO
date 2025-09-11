@@ -50,7 +50,7 @@ const Login = () => {
 
         // Redireciona com base no tipo de usuário
         if (data.user.userType === 'admin') {
-          navigate('/dashboard');
+          navigate('/admin/dashboard');
         } else if (data.user.userType === 'customer') {
           navigate('/customer/dashboard');
         } else {

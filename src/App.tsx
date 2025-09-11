@@ -1,12 +1,12 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { Container } from 'react-bootstrap';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 
 // Components
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import CustomerProtectedRoute from './components/CustomerProtectedRoute';
+import AdminLayout from './components/AdminLayout'; // Nosso novo layout
 
 // Pages
 import Home from './pages/Home';
@@ -27,42 +27,45 @@ function App() {
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Header />
         <main style={{ flex: '1' }}>
-          <Container className="mt-4">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/booking" element={<Booking />} />
+          <Routes>
+            {/* Rotas Públicas */}
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/booking" element={<Booking />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/customer/register" element={<CustomerRegister />} />
 
-              {/* Admin Auth Routes */}
-              <Route path="/register" element={<Register />} />
-              <Route path="/login" element={<Login />} />
+            {/* Área de Administração */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              {/* Rotas filhas de /admin. Ex: /admin/dashboard */}
+              <Route path="dashboard" element={<Dashboard />} />
+              {/* Futuras rotas de admin virão aqui */}
+              {/* <Route path="services" element={<div>Página de Serviços</div>} /> */}
+            </Route>
 
-              {/* Protected Admin Route */}
-              <Route 
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
+            {/* Área do Cliente */}
+            <Route
+              path="/customer/dashboard"
+              element={
+                <CustomerProtectedRoute>
+                  <CustomerDashboard />
+                </CustomerProtectedRoute>
+              }
+            />
 
-              {/* Customer Auth Routes */}
-              <Route path="/customer/register" element={<CustomerRegister />} />
+            {/* Redirecionamento da rota antiga para a nova */}
+            <Route path="/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
 
-              {/* Protected Customer Route */}
-              <Route 
-                path="/customer/dashboard"
-                element={
-                  <CustomerProtectedRoute>
-                    <CustomerDashboard />
-                  </CustomerProtectedRoute>
-                }
-              />
-            </Routes>
-          </Container>
+          </Routes>
         </main>
         <Footer />
       </div>
