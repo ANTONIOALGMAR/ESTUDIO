@@ -1,19 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Button, Table, Spinner, Alert } from 'react-bootstrap';
-
-// Interface for the user data (matching backend User.model.js)
-interface IUser {
-  _id: string;
-  fullName: string;
-  email: string;
-  role: 'admin' | 'funcionario';
-  createdAt: string;
-}
+import UserFormModal, { IUser } from '../../components/UserFormModal'; // Importa o modal e a interface
 
 const AdminEmployees = () => {
   const [users, setUsers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Estados para o Modal
+  const [showModal, setShowModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<IUser | null>(null);
 
   const fetchUsers = useCallback(async () => {
     const token = localStorage.getItem('auth-token');
@@ -50,11 +46,76 @@ const AdminEmployees = () => {
     fetchUsers();
   }, [fetchUsers]);
 
+  const handleOpenModal = (user: IUser | null) => {
+    setEditingUser(user);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingUser(null);
+  };
+
+  const handleSaveUser = async (userData: IUser) => {
+    const token = localStorage.getItem('auth-token');
+    const method = userData._id ? 'PUT' : 'POST';
+    const url = userData._id
+      ? `${process.env.REACT_APP_API_URL}/api/users/${userData._id}`
+      : `${process.env.REACT_APP_API_URL}/api/users`;
+
+    try {
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'auth-token': token!,
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Falha ao salvar usuário.');
+      }
+
+      handleCloseModal();
+      fetchUsers(); // Re-busca os usuários para atualizar a lista
+    } catch (err: any) {
+      setError(err.message);
+      // Não fechar o modal em caso de erro para o usuário poder corrigir
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este usuário?')) {
+      const token = localStorage.getItem('auth-token');
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'auth-token': token!,
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Falha ao excluir usuário.');
+        }
+        
+        fetchUsers(); // Re-busca os usuários
+      } catch (err: any) {
+        setError(err.message);
+      }
+    }
+  };
+
   return (
     <Container fluid>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>Gestão de Funcionários</h1>
-        <Button variant="primary">Adicionar Novo Funcionário</Button>
+        <Button variant="primary" onClick={() => handleOpenModal(null)}>
+          Adicionar Novo Funcionário
+        </Button>
       </div>
 
       {loading && (
@@ -85,10 +146,10 @@ const AdminEmployees = () => {
                 <td>{user.role === 'admin' ? 'Administrador' : 'Funcionário'}</td>
                 <td>{new Date(user.createdAt).toLocaleDateString('pt-BR')}</td>
                 <td>
-                  <Button variant="outline-secondary" size="sm" className="me-2">
+                  <Button variant="outline-secondary" size="sm" className="me-2" onClick={() => handleOpenModal(user)}>
                     Editar
                   </Button>
-                  <Button variant="outline-danger" size="sm">
+                  <Button variant="outline-danger" size="sm" onClick={() => handleDeleteUser(user._id!)}>
                     Excluir
                   </Button>
                 </td>
@@ -97,6 +158,13 @@ const AdminEmployees = () => {
           </tbody>
         </Table>
       )}
+
+      <UserFormModal 
+        show={showModal}
+        onHide={handleCloseModal}
+        onSave={handleSaveUser}
+        user={editingUser}
+      />
     </Container>
   );
 };
