@@ -8,6 +8,7 @@ export interface IUser {
   email: string;
   password?: string; // Optional for editing, required for new
   role: 'admin' | 'funcionario';
+  createdAt?: string; // Adicionado para corresponder ao backend
 }
 
 // Interface for the component's props
