@@ -15,7 +15,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key'; // Chave sec
  * @param {string} fullName - Nome completo do cliente.
  * @returns {Promise<{customer: object, isNew: boolean}>}
  */
-async function findOrCreateCustomer(email, password, fullName) {
+async function findOrCreateCustomer(email, password, fullName, phone) {
   let customer = await Customer.findOne({ email });
   let isNew = false;
 
@@ -36,6 +36,7 @@ async function findOrCreateCustomer(email, password, fullName) {
       fullName,
       email,
       password: hashedPassword,
+      phone, // Adiciona o telefone ao criar o cliente
     });
     customer = await newCustomer.save();
     isNew = true;
@@ -69,7 +70,7 @@ router.post('/', async (req, res) => {
 
     // Se uma senha for fornecida, o usuário está tentando se registrar ou fazer login.
     if (password) {
-      const { customer } = await findOrCreateCustomer(email, password, fullName);
+      const { customer } = await findOrCreateCustomer(email, password, fullName, phone);
       customerId = customer._id;
       customerToken = generateCustomerToken(customerId);
     } else {
