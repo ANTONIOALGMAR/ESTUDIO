@@ -50,7 +50,7 @@ router.post('/', verifyAdmin, async (req, res) => {
 router.put('/:id', verifyAdmin, async (req, res) => {
   try {
     const { fullName, email, password, role } = req.body;
-    const updateFields: any = { fullName, email, role };
+    const updateFields = { fullName, email, role };
 
     // Se a senha for fornecida, faz o hash
     if (password) {
