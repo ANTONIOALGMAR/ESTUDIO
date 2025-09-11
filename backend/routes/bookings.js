@@ -208,10 +208,10 @@ router.get('/filtered', verifyAdmin, async (req, res) => {
     const query = {};
 
     if (startDate) {
-      query.date = { ...query.date, $gte: new Date(startDate as string) };
+      query.date = { ...query.date, $gte: new Date(startDate) };
     }
     if (endDate) {
-      query.date = { ...query.date, $lte: new Date(endDate as string) };
+      query.date = { ...query.date, $lte: new Date(endDate) };
     }
     if (status && status !== 'all') {
       query.status = status;
