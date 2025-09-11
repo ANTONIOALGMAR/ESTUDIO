@@ -49,7 +49,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ show, onHide, onSave, use
     }
   }, [user, show]); // Roda quando o usuário ou a visibilidade do modal muda
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
