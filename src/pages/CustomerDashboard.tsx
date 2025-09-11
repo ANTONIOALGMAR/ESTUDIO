@@ -109,7 +109,12 @@ const CustomerDashboard = () => {
 
   return (
     <Container style={{ paddingTop: '50px' }}>
-      <h2>Meus Agendamentos</h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>Meus Agendamentos</h2>
+        <Button variant="warning" onClick={() => navigate('/booking')}>
+          Agendar Novo Serviço
+        </Button>
+      </div>
       {bookings.length === 0 ? (
         <>
           <Alert variant="info">Você ainda não possui agendamentos.</Alert>

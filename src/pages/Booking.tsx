@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 
@@ -38,6 +38,23 @@ const Booking = () => {
   const [city, setCity] = useState('');
 
   const navigate = useNavigate();
+
+  // Efeito para pré-preencher dados se o cliente estiver logado
+  useEffect(() => {
+    const customerToken = localStorage.getItem('customer-auth-token');
+    const userData = localStorage.getItem('user');
+
+    if (customerToken && userData) {
+      try {
+        const user = JSON.parse(userData);
+        setFullName(user.fullName || '');
+        setEmail(user.email || '');
+        setPhone(user.phone || ''); // Assumindo que o telefone pode estar nos dados do usuário
+      } catch (error) {
+        console.error("Erro ao parsear dados do usuário:", error);
+      }
+    }
+  }, []);
 
   const handleServiceChange = (serviceName: string) => {
     setServices(prevServices => 
