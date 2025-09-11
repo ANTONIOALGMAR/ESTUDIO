@@ -19,6 +19,7 @@ import Dashboard from './pages/Dashboard';
 import CustomerRegister from './pages/CustomerRegister';
 import CustomerDashboard from './pages/CustomerDashboard';
 import AdminEmployees from './pages/admin/Employees'; // Importa a página de funcionários
+import AdminReports from './pages/admin/Reports'; // Importa a página de relatórios
 import AdminServices from './pages/admin/Services'; // Importa a nova página
 import AdminCustomers from './pages/admin/Customers'; // Importa a página de clientes
 import CustomerDetails from './pages/admin/CustomerDetails'; // Importa a página de detalhes do cliente
@@ -56,6 +57,7 @@ function App() {
               <Route path="customers" element={<AdminCustomers />} />
               <Route path="customers/:id" element={<CustomerDetails />} />
               <Route path="employees" element={<AdminEmployees />} />
+              <Route path="reports" element={<AdminReports />} />
               {/* Futuras rotas de admin virão aqui */}
             </Route>
 
