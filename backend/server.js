@@ -39,10 +39,12 @@ connection.once('open', () => {
 // Import Routes
 const unifiedAuthRoutes = require('./routes/unifiedAuth');
 const bookingRoutes = require('./routes/bookings');
+const serviceRoutes = require('./routes/services'); // Importa as rotas de serviço
 
 // Route Middlewares
 app.use('/api/unified-auth', unifiedAuthRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/services', serviceRoutes);
 
 
 // Simple test route
