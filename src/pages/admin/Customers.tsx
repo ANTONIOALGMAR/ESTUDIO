@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Table, Spinner, Alert } from 'react-bootstrap';
+import { Container, Table, Spinner, Alert, Form, Row, Col } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 // Interface for the customer data
@@ -13,6 +13,8 @@ interface ICustomer {
 
 const AdminCustomers = () => {
   const [customers, setCustomers] = useState<ICustomer[]>([]);
+  const [filteredCustomers, setFilteredCustomers] = useState<ICustomer[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -40,6 +42,7 @@ const AdminCustomers = () => {
 
       const data = await response.json();
       setCustomers(data);
+      setFilteredCustomers(data);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -51,11 +54,30 @@ const AdminCustomers = () => {
     fetchCustomers();
   }, [fetchCustomers]);
 
+  // Efeito para filtrar os clientes
+  useEffect(() => {
+    const results = customers.filter(customer =>
+      customer.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredCustomers(results);
+  }, [searchTerm, customers]);
+
   return (
     <Container fluid>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1>Gestão de Clientes</h1>
-      </div>
+      <Row className="align-items-center mb-4">
+        <Col sm={8}>
+          <h1>Gestão de Clientes</h1>
+        </Col>
+        <Col sm={4}>
+          <Form.Control
+            type="text"
+            placeholder="Buscar por nome ou email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </Col>
+      </Row>
 
       {loading && (
         <div className="text-center">
@@ -77,7 +99,7 @@ const AdminCustomers = () => {
             </tr>
           </thead>
           <tbody>
-            {customers.map((customer) => (
+            {filteredCustomers.map((customer) => (
               <tr key={customer._id}>
                 <td><Link to={`/admin/customers/${customer._id}`}>{customer.fullName}</Link></td>
                 <td>{customer.email}</td>
