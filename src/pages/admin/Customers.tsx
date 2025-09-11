@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Table, Spinner, Alert } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 
 // Interface for the customer data
 interface ICustomer {
@@ -78,7 +79,7 @@ const AdminCustomers = () => {
           <tbody>
             {customers.map((customer) => (
               <tr key={customer._id}>
-                <td>{customer.fullName}</td>
+                <td><Link to={`/admin/customers/${customer._id}`}>{customer.fullName}</Link></td>
                 <td>{customer.email}</td>
                 <td>{customer.phone || 'N/A'}</td>
                 <td>{new Date(customer.createdAt).toLocaleDateString('pt-BR')}</td>

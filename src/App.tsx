@@ -20,6 +20,7 @@ import CustomerRegister from './pages/CustomerRegister';
 import CustomerDashboard from './pages/CustomerDashboard';
 import AdminServices from './pages/admin/Services'; // Importa a nova página
 import AdminCustomers from './pages/admin/Customers'; // Importa a página de clientes
+import CustomerDetails from './pages/admin/CustomerDetails'; // Importa a página de detalhes do cliente
 
 import './App.css';
 
@@ -52,6 +53,7 @@ function App() {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="services" element={<AdminServices />} />
               <Route path="customers" element={<AdminCustomers />} />
+              <Route path="customers/:id" element={<CustomerDetails />} />
               {/* Futuras rotas de admin virão aqui */}
             </Route>
 
