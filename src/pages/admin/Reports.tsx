@@ -1,19 +1,125 @@
-import React, { useState } from 'react';
-import { Container, Form, Button, Row, Col, Table } from 'react-bootstrap';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Container, Form, Button, Row, Col, Table, Spinner, Alert, Card } from 'react-bootstrap';
+
+// Re-using interfaces
+interface IBooking {
+  _id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  car?: string;
+  licensePlate?: string;
+  service: string[];
+  date: string;
+  createdAt: string;
+  status: string;
+}
+
+interface IService {
+  _id: string;
+  name: string;
+  price: number;
+}
 
 const AdminReports = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [status, setStatus] = useState('all');
-  const [filteredBookings, setFilteredBookings] = useState([]); // Placeholder for now
+  const [filteredBookings, setFilteredBookings] = useState<IBooking[]>([]);
+  const [loading, setLoading] = useState(false); // Start as false, load on filter
+  const [error, setError] = useState('');
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [services, setServices] = useState<IService[]>([]); // To get service prices
 
   const STATUS_OPTIONS = ['all', 'aguardando', 'em andamento', 'pronto', 'entregue'];
 
+  // Fetch all services to map names to prices for revenue calculation
+  const fetchAllServices = useCallback(async () => {
+    const token = localStorage.getItem('auth-token');
+    if (!token) {
+      setError("Token não encontrado. Faça login novamente.");
+      return;
+    }
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+      const response = await fetch(`${apiUrl}/api/services/all`, {
+        headers: { 'auth-token': token },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Falha ao buscar lista de serviços.');
+      }
+      const data = await response.json();
+      setServices(data);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAllServices();
+  }, [fetchAllServices]);
+
+  const calculateRevenue = useCallback((bookings: IBooking[]) => {
+    let revenue = 0;
+    const serviceMap = new Map(services.map(s => [s.name, s.price]));
+
+    bookings.forEach(booking => {
+      if (booking.status === 'entregue') {
+        booking.service.forEach(serviceName => {
+          revenue += serviceMap.get(serviceName) || 0;
+        });
+      }
+    });
+    return revenue;
+  }, [services]);
+
+  const fetchFilteredBookings = useCallback(async () => {
+    const token = localStorage.getItem('auth-token');
+    if (!token) {
+      setError("Token não encontrado. Faça login novamente.");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+      let queryParams = new URLSearchParams();
+      if (startDate) queryParams.append('startDate', startDate);
+      if (endDate) queryParams.append('endDate', endDate);
+      if (status !== 'all') queryParams.append('status', status);
+
+      const response = await fetch(`${apiUrl}/api/bookings/filtered?${queryParams.toString()}`, {
+        headers: { 'auth-token': token },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Falha ao buscar agendamentos filtrados.');
+      }
+
+      const data = await response.json();
+      setFilteredBookings(data);
+      setTotalRevenue(calculateRevenue(data)); // Calculate revenue for filtered data
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [startDate, endDate, status, calculateRevenue]);
+
   const handleFilter = (e: React.FormEvent) => {
     e.preventDefault();
-    // Lógica para buscar os agendamentos filtrados virá aqui
-    console.log('Filtrando por:', { startDate, endDate, status });
+    fetchFilteredBookings();
   };
+
+  // Initial fetch when component mounts
+  useEffect(() => {
+    fetchFilteredBookings();
+  }, [fetchFilteredBookings]);
+
 
   return (
     <Container fluid>
@@ -64,27 +170,64 @@ const AdminReports = () => {
         </Row>
       </Form>
 
-      {/* Tabela de resultados (placeholder por enquanto) */}
-      <p>Os agendamentos filtrados aparecerão aqui.</p>
-      <Table striped bordered hover responsive>
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Serviço</th>
-            <th>Data</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {/* Exemplo de linha, será substituído por dados reais */}
-          <tr>
-            <td>Cliente Teste</td>
-            <td>Lavagem Básica</td>
-            <td>10/09/2025</td>
-            <td>pronto</td>
-          </tr>
-        </tbody>
-      </Table>
+      {error && <Alert variant="danger">{error}</Alert>}
+
+      {loading ? (
+        <div className="text-center">
+          <Spinner animation="border" variant="primary" />
+          <p>Carregando relatórios...</p>
+        </div>
+      ) : (
+        <>
+          <Row className="mb-4">
+            <Col md={6}>
+              <Card bg="info" text="white">
+                <Card.Body>
+                  <Card.Title>Total de Agendamentos Filtrados</Card.Title>
+                  <Card.Text className="fs-4 fw-bold">{filteredBookings.length}</Card.Text>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col md={6}>
+              <Card bg="success" text="white">
+                <Card.Body>
+                  <Card.Title>Faturamento do Período</Card.Title>
+                  <Card.Text className="fs-4 fw-bold">R$ {totalRevenue.toFixed(2)}</Card.Text>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+
+          {filteredBookings.length === 0 ? (
+            <Alert variant="info">Nenhum agendamento encontrado para os filtros selecionados.</Alert>
+          ) : (
+            <Table striped bordered hover responsive>
+              <thead>
+                <tr>
+                  <th>Data do Pedido</th>
+                  <th>Nome Completo</th>
+                  <th>Email</th>
+                  <th>Serviço(s)</th>
+                  <th>Data do Serviço</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredBookings.map((booking) => (
+                  <tr key={booking._id}>
+                    <td>{new Date(booking.createdAt).toLocaleDateString('pt-BR')}</td>
+                    <td>{booking.fullName}</td>
+                    <td>{booking.email}</td>
+                    <td>{Array.isArray(booking.service) ? booking.service.join(', ') : booking.service}</td>
+                    <td>{new Date(booking.date).toLocaleDateString('pt-BR')}</td>
+                    <td>{booking.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </>
+      )}
     </Container>
   );
 };
