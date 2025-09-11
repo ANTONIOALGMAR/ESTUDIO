@@ -43,3 +43,8 @@
   object-fit: cover;
   object-position: center;
 }
+
+/* New rule for title color */
+h1, h2, h3, h4 {
+  color: #dc3545; /* Bootstrap's danger red */
+}
