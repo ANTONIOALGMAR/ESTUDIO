@@ -1,0 +1,13 @@
+.carousel-item img {
+  width: 100%;
+  height: 80vh; /* Ocupa 80% da altura da tela */
+  object-fit: cover; /* Garante que a imagem cubra a área sem distorcer, cortando o excesso */
+  object-position: center; /* Centraliza a imagem, focando no meio */
+}
+
+@media (max-width: 768px) {
+  .carousel-item img {
+    height: 50vh; /* Altura menor e mais consistente para telas de celular */
+    object-position: center 25%; /* Ajusta a posição vertical para focar um pouco mais para cima */
+  }
+}
