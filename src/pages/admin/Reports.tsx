@@ -129,7 +129,7 @@ const AdminReports = () => {
         <Row className="align-items-end">
           <Col md={4}>
             <Form.Group controlId="startDate">
-              <Form.Label>Data Inicial</Form.Label>
+              <Form.Label className="text-dark">Data Inicial</Form.Label>
               <Form.Control
                 type="date"
                 value={startDate}
@@ -139,7 +139,7 @@ const AdminReports = () => {
           </Col>
           <Col md={4}>
             <Form.Group controlId="endDate">
-              <Form.Label>Data Final</Form.Label>
+              <Form.Label className="text-dark">Data Final</Form.Label>
               <Form.Control
                 type="date"
                 value={endDate}
@@ -149,7 +149,7 @@ const AdminReports = () => {
           </Col>
           <Col md={3}>
             <Form.Group controlId="statusFilter">
-              <Form.Label>Status</Form.Label>
+              <Form.Label className="text-dark">Status</Form.Label>
               <Form.Select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
