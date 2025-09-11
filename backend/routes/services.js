@@ -2,13 +2,24 @@ const router = require('express').Router();
 const Service = require('../models/Service.model');
 const verifyAdmin = require('../middleware/verifyAdmin');
 
-// ROTA PÚBLICA - Listar todos os serviços ativos
+// ROTA PÚBLICA - Listar todos os serviços ativos (sem preço)
 router.get('/', async (req, res) => {
   try {
-    const services = await Service.find({ isActive: true });
+    // O .select('-price') remove o campo de preço da busca
+    const services = await Service.find({ isActive: true }).select('-price');
     res.json(services);
   } catch (err) {
     res.status(500).json({ message: 'Erro ao buscar serviços.', error: err });
+  }
+});
+
+// ROTA DE ADMIN - Listar TODOS os serviços (com preço)
+router.get('/all', verifyAdmin, async (req, res) => {
+  try {
+    const services = await Service.find(); // Pega todos, incluindo inativos
+    res.json(services);
+  } catch (err) {
+    res.status(500).json({ message: 'Erro ao buscar todos os serviços.', error: err });
   }
 });
 
