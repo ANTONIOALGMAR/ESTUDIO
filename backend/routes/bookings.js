@@ -205,7 +205,7 @@ router.post('/associate-customer', verifyToken, async (req, res) => {
 router.get('/filtered', verifyAdmin, async (req, res) => {
   try {
     const { startDate, endDate, status } = req.query;
-    const query: any = {};
+    const query = {};
 
     if (startDate) {
       query.date = { ...query.date, $gte: new Date(startDate as string) };
