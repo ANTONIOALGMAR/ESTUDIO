@@ -18,6 +18,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import CustomerRegister from './pages/CustomerRegister';
 import CustomerDashboard from './pages/CustomerDashboard';
+import AdminServices from './pages/admin/Services'; // Importa a nova página
 
 import './App.css';
 
@@ -48,8 +49,8 @@ function App() {
             >
               {/* Rotas filhas de /admin. Ex: /admin/dashboard */}
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="services" element={<AdminServices />} />
               {/* Futuras rotas de admin virão aqui */}
-              {/* <Route path="services" element={<div>Página de Serviços</div>} /> */}
             </Route>
 
             {/* Área do Cliente */}

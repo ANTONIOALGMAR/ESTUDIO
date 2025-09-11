@@ -9,16 +9,16 @@ const AdminLayout = () => {
         <h3>Admin</h3>
         <ul>
           <li>
-            <NavLink to="/admin/dashboard">Dashboard</NavLink>
+            <NavLink to="dashboard">Dashboard</NavLink>
           </li>
           <li>
-            <NavLink to="/admin/services">Serviços</NavLink>
+            <NavLink to="services">Serviços</NavLink>
           </li>
           <li>
-            <NavLink to="/admin/customers">Clientes</NavLink>
+            <NavLink to="customers">Clientes</NavLink>
           </li>
           <li>
-            <NavLink to="/admin/reports">Relatórios</NavLink>
+            <NavLink to="reports">Relatórios</NavLink>
           </li>
         </ul>
       </nav>
