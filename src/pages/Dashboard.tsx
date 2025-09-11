@@ -1,3 +1,32 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import { Container, Table, Alert, Spinner, Button, Form, Row, Col, Card } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import BookingEditModal from '../components/BookingEditModal';
+import useMediaQuery from '../hooks/useMediaQuery';
+
+// Interfaces
+interface IBooking {
+  _id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  car?: string;
+  licensePlate?: string;
+  service: string[];
+  date: string;
+  createdAt: string;
+  status: string;
+}
+
+interface ISummary {
+  totalCustomers: number;
+  totalBookings: number;
+  totalRevenue: number;
+}
+
+const STATUS_OPTIONS = ['aguardando', 'em andamento', 'pronto', 'entregue'];
+
+// Helper function to get Bootstrap variant for status
 const getStatusVariant = (status: string) => {
   switch (status) {
     case 'aguardando':
@@ -14,16 +43,163 @@ const getStatusVariant = (status: string) => {
 };
 
 const Dashboard = () => {
-  // ... (existing states and fetch logic) ...
+  // States
+  const [bookings, setBookings] = useState<IBooking[]>([]);
+  const [filteredBookings, setFilteredBookings] = useState<IBooking[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [summary, setSummary] = useState<ISummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<IBooking | null>(null);
 
-  // ... (useEffect for filter, handleDelete, handleStatusChange, etc. remain the same) ...
+  const fetchData = useCallback(async () => {
+    const token = localStorage.getItem('auth-token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
 
-  // ... (loading and error return statements remain the same) ...
+    setLoading(true);
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+      
+      // Busca dados dos agendamentos e do resumo em paralelo
+      const [bookingsResponse, summaryResponse] = await Promise.all([
+        fetch(`${apiUrl}/api/bookings`, { headers: { 'auth-token': token } }),
+        fetch(`${apiUrl}/api/analytics/summary`, { headers: { 'auth-token': token } })
+      ]);
+
+      // Trata a resposta dos agendamentos
+      if (!bookingsResponse.ok) throw new Error('Falha ao buscar agendamentos.');
+      const bookingsData = await bookingsResponse.json();
+      setBookings(bookingsData);
+      setFilteredBookings(bookingsData);
+
+      // Trata a resposta do resumo
+      if (!summaryResponse.ok) throw new Error('Falha ao buscar resumo de analytics.');
+      const summaryData = await summaryResponse.json();
+      setSummary(summaryData);
+
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Efeito para filtrar os agendamentos
+  useEffect(() => {
+    const results = bookings.filter(booking =>
+      booking.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (booking.car && booking.car.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (booking.licensePlate && booking.licensePlate.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (Array.isArray(booking.service) && booking.service.some(s => s.toLowerCase().includes(searchTerm.toLowerCase())))
+    );
+    setFilteredBookings(results);
+  }, [searchTerm, bookings]);
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este agendamento?')) {
+      const token = localStorage.getItem('auth-token');
+      try {
+        const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
+        const response = await fetch(`${apiUrl}/api/bookings/${id}`, {
+          method: 'DELETE',
+          headers: { 'auth-token': token! },
+        });
+        if (!response.ok) throw new Error('Falha ao excluir agendamento.');
+        fetchData(); // Re-busca todos os dados para atualizar o dashboard
+      } catch (err: any) {
+        setError(err.message);
+      }
+    }
+  };
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    const token = localStorage.getItem('auth-token');
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
+      const response = await fetch(`${apiUrl}/api/bookings/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'auth-token': token! },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!response.ok) throw new Error('Falha ao atualizar status.');
+      fetchData(); // Re-busca todos os dados para atualizar o dashboard
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  // Funções do modal
+  const handleEditClick = (booking: IBooking) => {
+    setSelectedBooking(booking);
+    setShowEditModal(true);
+  };
+  const handleModalClose = () => {
+    setShowEditModal(false);
+    setSelectedBooking(null);
+  };
+  const handleModalSave = () => {
+    fetchData(); // Re-busca todos os dados após salvar
+  };
+
+  if (loading) {
+    return (
+      <Container className="text-center mt-5">
+        <Spinner animation="border" variant="warning" />
+        <p>Carregando dados do dashboard...</p>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return <Alert variant="danger">{error}</Alert>;
+  }
 
   return (
     <Container fluid>
       {/* Seção de Analytics */}
-      {/* ... (analytics cards remain the same) ... */}
+      <Row className="mb-4">
+        <Col md={4} className="mb-3">
+          <Card bg="dark" text="white">
+            <Card.Body>
+              <Card.Title>Faturamento Total</Card.Title>
+              <Card.Text className="fs-4 fw-bold">
+                {summary ? `R$ ${summary.totalRevenue.toFixed(2)}` : <Spinner size="sm" />}
+              </Card.Text>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={4} className="mb-3">
+          <Card bg="secondary" text="white">
+            <Card.Body>
+              <Card.Title>Total de Clientes</Card.Title>
+              <Card.Text className="fs-4 fw-bold">
+                {summary ? summary.totalCustomers : <Spinner size="sm" />}
+              </Card.Text>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={4} className="mb-3">
+          <Card bg="warning" text="dark">
+            <Card.Body>
+              <Card.Title>Total de Agendamentos</Card.Title>
+              <Card.Text className="fs-4 fw-bold">
+                {summary ? summary.totalBookings : <Spinner size="sm" />}
+              </Card.Text>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
       {/* Seção da Tabela de Agendamentos */}
       <Card>
@@ -49,7 +225,7 @@ const Dashboard = () => {
             isMobile ? (
               <div>
                 {filteredBookings.map((booking) => (
-                  <Card key={booking._id} className="mb-3" bg="dark" text="white">
+                  <Card key={booking._id} className="mb-3" bg="light">
                     <Card.Body>
                       <Card.Title>{booking.fullName}</Card.Title>
                       <Card.Subtitle className="mb-2 text-muted">{booking.car || 'Carro não informado'} - {booking.licensePlate || 'Placa não informada'}</Card.Subtitle>
