@@ -18,6 +18,9 @@ const AdminLayout = () => {
             <NavLink to="customers">Clientes</NavLink>
           </li>
           <li>
+            <NavLink to="employees">Funcionários</NavLink>
+          </li>
+          <li>
             <NavLink to="reports">Relatórios</NavLink>
           </li>
         </ul>
