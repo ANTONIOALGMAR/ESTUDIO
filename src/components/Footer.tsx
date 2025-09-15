@@ -11,7 +11,7 @@ const Footer = () => {
             <p>Siga-nos nas redes sociais!</p>
             <a href="https://www.instagram.com/studioo__carvalhoo/" target="_blank" rel="noopener noreferrer" style={{ color: 'yellow', margin: '0 15px' }}><FaInstagram size={30} /></a>
             <a href="https://wa.me/5511954989495" target="_blank" rel="noopener noreferrer" style={{ color: 'yellow', margin: '0 15px' }}><FaWhatsapp size={30} /></a>
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" style={{ color: 'yellow', margin: '0 15px' }}><FaFacebook size={30} /></a>
+            <a href="https://www.facebook.com/profile.php?id=61564202844778" target="_blank" rel="noopener noreferrer" style={{ color: 'yellow', margin: '0 15px' }}><FaFacebook size={30} /></a>
           </Col>
         </Row>
         <Row>
@@ -22,7 +22,11 @@ const Footer = () => {
                 (11) 95498-9495
               </a>
             </p>
-            <p style={{ paddingTop: '10px', fontSize: '0.9rem' }}>&copy; {new Date().getFullYear()} Studio Carvalho Estetica Automotiva. Todos os direitos reservados.</p>
+          </Col>
+        </Row>
+        <Row>
+          <Col className="text-center">
+            <p>&copy; 2025 Carvalho Studio. Todos os direitos reservados.</p>
           </Col>
         </Row>
       </Container>
