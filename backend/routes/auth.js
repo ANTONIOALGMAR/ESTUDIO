@@ -49,7 +49,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Cria e assina o token
-    const token = jwt.sign({ id: user._id }, 'your_jwt_secret_key', { expiresIn: '1h' });
+    const token = jwt.sign({ id: user._id }, require('../config/jwt'), { expiresIn: '1h' });
 
     res.header('auth-token', token).json({ token });
 

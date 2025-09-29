@@ -6,7 +6,7 @@ const verifyAdmin = require('../middleware/verifyAdmin'); // Importa o middlewar
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs'); // Importa o bcrypt
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key'; // Chave secreta para JWT, com um fallback de segurança
+const JWT_SECRET = require('../config/jwt');
 
 /**
  * Encontra um cliente existente pelo e-mail ou cria um novo.

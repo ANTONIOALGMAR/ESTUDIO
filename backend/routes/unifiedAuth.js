@@ -4,7 +4,7 @@ const Customer = require('../models/Customer.model'); // Customer User
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
+const JWT_SECRET = require('../config/jwt');
 
 // Middleware para extrair e verificar o token
 const extractUserFromToken = async (req, res, next) => {

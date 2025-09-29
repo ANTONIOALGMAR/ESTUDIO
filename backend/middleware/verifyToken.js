@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
+const JWT_SECRET = require('../config/jwt');
 
 module.exports = function (req, res, next) {
   // Tenta obter o token de ambos os cabeçalhos possíveis
