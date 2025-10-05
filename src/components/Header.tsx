@@ -75,21 +75,36 @@ const Header = () => {
   };
 
   const renderAuthButtons = (isMobile: boolean) => {
-    const Component = isMobile ? MenuItem : Button;
-    const commonProps = isMobile ? { onClick: handleCloseNavMenu } : {};
-
     if (isAdminAuthenticated) {
-      return <Component {...commonProps} onClick={() => handleLogout('admin')} sx={{ color: 'yellow' }}>Sair Admin</Component>;
-    } else if (isCustomerAuthenticated) {
-      return <Component {...commonProps} onClick={() => handleLogout('customer')} sx={{ color: 'yellow' }}>Sair Cliente</Component>;
-    } else {
+      if (isMobile) {
+        return <MenuItem onClick={() => { handleLogout('admin'); handleCloseNavMenu(); }} sx={{ color: 'yellow' }}>Sair Admin</MenuItem>;
+      }
+      return <Button onClick={() => handleLogout('admin')} sx={{ color: 'yellow' }}>Sair Admin</Button>;
+    }
+    
+    if (isCustomerAuthenticated) {
+      if (isMobile) {
+        return <MenuItem onClick={() => { handleLogout('customer'); handleCloseNavMenu(); }} sx={{ color: 'yellow' }}>Sair Cliente</MenuItem>;
+      }
+      return <Button onClick={() => handleLogout('customer')} sx={{ color: 'yellow' }}>Sair Cliente</Button>;
+    }
+
+    // Not authenticated
+    if (isMobile) {
       return (
         <>
-          <Component {...commonProps} component={Link} to="/login" sx={{ color: 'yellow' }}>Login</Component>
-          <Component {...commonProps} component={Link} to="/customer/register" sx={{ color: 'yellow' }}>Cadastro Cliente</Component>
+          <MenuItem onClick={handleCloseNavMenu} component={Link} to="/login" sx={{ color: 'yellow' }}>Login</MenuItem>
+          <MenuItem onClick={handleCloseNavMenu} component={Link} to="/customer/register" sx={{ color: 'yellow' }}>Cadastro Cliente</MenuItem>
         </>
       );
     }
+    
+    return (
+      <>
+        <Button component={Link} to="/login" sx={{ color: 'yellow' }}>Login</Button>
+        <Button component={Link} to="/customer/register" sx={{ color: 'yellow' }}>Cadastro Cliente</Button>
+      </>
+    );
   };
 
   return (
