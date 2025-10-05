@@ -1,10 +1,21 @@
 const router = require('express').Router();
+const rateLimit = require('express-rate-limit');
 const User = require('../models/User.model'); // Admin User
 const Customer = require('../models/Customer.model'); // Customer User
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { validate, registerSchema, loginSchema } = require('../middleware/validation'); // Importa a validação
 
 const JWT_SECRET = require('../config/jwt');
+
+// Limiter para a rota de login
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 20, // Limita cada IP a 20 requisições por janela
+  message: 'Muitas tentativas de login deste IP, por favor, tente novamente após 15 minutos.',
+  standardHeaders: true, // Retorna informações do limite nos headers `RateLimit-*`
+  legacyHeaders: false, // Desabilita os headers `X-RateLimit-*`
+});
 
 // Middleware para extrair e verificar o token
 const extractUserFromToken = async (req, res, next) => {
@@ -26,11 +37,8 @@ const extractUserFromToken = async (req, res, next) => {
   next();
 };
 
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email e senha são obrigatórios.' });
-  }
   try {
     // Verifica se o usuário é um Admin
     const adminUser = await User.findOne({ email });
@@ -74,21 +82,17 @@ router.get('/verify-token', extractUserFromToken, (req, res) => {
   res.json({ user: { ...req.user.toObject(), userType: finalUserType } });
 });
 
-// Rota de Registro Unificado
-router.post('/register', async (req, res) => {
+router.post('/register', validate(registerSchema), async (req, res) => {
   const { fullName, email, password, userType } = req.body;
 
   try {
-    if (!fullName || !email || !password || !userType) {
-      return res.status(400).json({ message: 'Todos os campos são obrigatórios.' });
-    }
-
     let existingUser;
     if (userType === 'admin') {
       existingUser = await User.findOne({ email });
     } else if (userType === 'customer') {
       existingUser = await Customer.findOne({ email });
     } else {
+      // Esta verificação pode ser removida se a validação do Joi for suficiente
       return res.status(400).json({ message: 'Tipo de usuário inválido.' });
     }
 

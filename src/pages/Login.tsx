@@ -1,35 +1,46 @@
 import React, { useState } from 'react';
-import { Container, Form, Button, Alert, InputGroup, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { 
+  Container, 
+  Box, 
+  Typography, 
+  TextField, 
+  Button, 
+  Alert, 
+  CircularProgress, 
+  InputAdornment, 
+  IconButton 
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false); // Estado para o carregamento
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-    setLoading(true); // Inicia o carregamento
-    
-    // Garante que a URL da API seja a de produção, mesmo que a variável de ambiente falhe.
+    setLoading(true);
+
     const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
 
     try {
-      const response = await fetch(
-        `${apiUrl}/api/unified-auth/login`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password }),
-        }
-      );
+      const response = await fetch(`${apiUrl}/api/unified-auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
       const data = await response.json();
 
@@ -37,25 +48,20 @@ const Login = () => {
         throw new Error(data.message || 'Falha ao fazer login.');
       }
 
-      // O backend retorna { token, user: { userType, ... } }
       if (data.token && data.user) {
-        // Limpa tokens antigos para evitar conflitos
         localStorage.removeItem('auth-token');
         localStorage.removeItem('customer-auth-token');
         
-        // Salva o token e os dados do usuário para a nova sessão
         const tokenKey = data.user.userType === 'admin' ? 'auth-token' : 'customer-auth-token';
         localStorage.setItem(tokenKey, data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
 
-        // Redireciona com base no tipo de usuário
         if (data.user.userType === 'admin') {
           navigate('/admin/dashboard');
         } else if (data.user.userType === 'customer') {
           navigate('/customer/dashboard');
         } else {
-          // Limpa os dados em caso de tipo de usuário inesperado
-          localStorage.removeItem('auth-token');
+          localStorage.removeItem(tokenKey);
           localStorage.removeItem('user');
           setError('Tipo de usuário desconhecido.');
         }
@@ -65,54 +71,74 @@ const Login = () => {
     } catch (err: any) {
       setError(err.message);
     } finally {
-      setLoading(false); // Finaliza o carregamento
+      setLoading(false);
     }
   };
 
   return (
-    <Container style={{ paddingTop: '50px', maxWidth: '500px' }}>
-      <h2>Login</h2>
-      {error && <Alert variant="danger">{error}</Alert>}
-      <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3" controlId="formBasicEmail">
-          <Form.Label>Email</Form.Label>
-          <Form.Control
-            type="email"
-            placeholder="Digite seu email"
+    <Container component="main" maxWidth="xs">
+      <Box
+        sx={{
+          marginTop: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+        <Typography component="h1" variant="h5">
+          Login
+        </Typography>
+        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+          {error && <Alert severity="error" sx={{ width: '100%', mt: 2 }}>{error}</Alert>}
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Endereço de Email"
+            name="email"
+            autoComplete="email"
+            autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required
           />
-        </Form.Group>
-
-        <Form.Group className="mb-3" controlId="formBasicPassword">
-          <Form.Label>Senha</Form.Label>
-          <InputGroup>
-            <Form.Control
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Digite sua senha"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <Button
-              variant="outline-secondary"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </Button>
-          </InputGroup>
-        </Form.Group>
-
-        <Button variant="warning" type="submit" disabled={loading}>
-          {loading ? (
-            <>
-              <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
-              <span className="visually-hidden">Carregando...</span>
-            </>
-          ) : 'Entrar'}
-        </Button>
-      </Form>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Senha"
+            type={showPassword ? 'text' : 'password'}
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={handleClickShowPassword}
+                    onMouseDown={handleMouseDownPassword}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
+          </Button>
+        </Box>
+      </Box>
     </Container>
   );
 };

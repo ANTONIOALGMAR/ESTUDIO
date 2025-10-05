@@ -1,37 +1,68 @@
 import React from 'react';
-import { Container, Row, Col } from 'react-bootstrap';
-import { FaInstagram, FaWhatsapp, FaFacebook, FaPhone } from 'react-icons/fa';
+import { Box, Container, Typography, IconButton, Link } from '@mui/material';
+import { Instagram, WhatsApp, Facebook, Phone } from '@mui/icons-material';
 
 const Footer = () => {
+  const socialLinks = [
+    { icon: <Instagram />, href: 'https://www.instagram.com/studioo__carvalhoo/' },
+    { icon: <WhatsApp />, href: 'https://wa.me/5511954989495' },
+    { icon: <Facebook />, href: 'https://www.facebook.com/profile.php?id=61564202844778' },
+  ];
+
   return (
-    <footer style={{ paddingTop: '30px', paddingBottom: '30px', marginTop: '50px', borderTop: '1px solid #333' }}>
-      <Container>
-        <Row>
-          <Col className="text-center">
-            <p>Siga-nos nas redes sociais!</p>
-            <a href="https://www.instagram.com/studioo__carvalhoo/" target="_blank" rel="noopener noreferrer" style={{ color: 'yellow', margin: '0 15px' }}><FaInstagram size={30} /></a>
-            <a href="https://wa.me/5511954989495" target="_blank" rel="noopener noreferrer" style={{ color: 'yellow', margin: '0 15px' }}><FaWhatsapp size={30} /></a>
-            <a href="https://www.facebook.com/profile.php?id=61564202844778" target="_blank" rel="noopener noreferrer" style={{ color: 'yellow', margin: '0 15px' }}><FaFacebook size={30} /></a>
-          </Col>
-        </Row>
-        <Row>
-          <Col className="text-center" style={{ paddingTop: '20px' }}>
-            <p>
-              <a href="tel:+5511954989495" style={{ color: 'white', textDecoration: 'none' }}>
-                <FaPhone size={20} style={{ marginRight: '10px' }} />
-                (11) 95498-9495
-              </a>
-            </p>
-          </Col>
-        </Row>
-        <Row>
-          <Col className="text-center">
-            <p>&copy; 2025 Carvalho Studio. Todos os direitos reservados.</p>
-          </Col>
-        </Row>
+    <Box
+      component="footer"
+      sx={{
+        bgcolor: '#212529',
+        color: 'white',
+        py: 3, // padding vertical
+        mt: 'auto', // Empurra o rodapé para o final da página
+        borderTop: '2px solid yellow',
+      }}
+    >
+      <Container maxWidth="lg">
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h6" gutterBottom>
+            Siga-nos nas redes sociais!
+          </Typography>
+          <Box sx={{ mb: 2 }}>
+            {socialLinks.map((social, index) => (
+              <IconButton
+                key={index}
+                component="a"
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ color: 'yellow', mx: 1.5 }} // margin horizontal
+              >
+                {social.icon}
+              </IconButton>
+            ))}
+          </Box>
+          <Link
+            href="tel:+5511954989495"
+            variant="body1"
+            sx={{
+              color: 'white',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              mb: 2,
+              '&:hover': {
+                textDecoration: 'underline',
+              },
+            }}
+          >
+            <Phone sx={{ mr: 1 }} />
+            (11) 95498-9495
+          </Link>
+          <Typography variant="body2" color="text.secondary" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+            &copy; {new Date().getFullYear()} Carvalho Studio. Todos os direitos reservados.
+          </Typography>
+        </Box>
       </Container>
-    </footer>
+    </Box>
   );
-}
+};
 
 export default Footer;

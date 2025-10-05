@@ -1,11 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Container,
+  Box,
+  IconButton,
+  Menu,
+  MenuItem,
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import logo from '../assets/images/logo2.png';
 
 const Header = () => {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [isCustomerAuthenticated, setIsCustomerAuthenticated] = useState(false);
+  const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -14,61 +26,158 @@ const Header = () => {
     const customerToken = localStorage.getItem('customer-auth-token');
     setIsAdminAuthenticated(!!adminToken);
     setIsCustomerAuthenticated(!!customerToken);
-  }, [location]); // Re-verifica a cada mudança de rota
+  }, [location]);
 
-  const handleAdminLogout = () => {
-    localStorage.removeItem('auth-token');
+  const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorElNav(event.currentTarget);
+  };
+
+  const handleCloseNavMenu = () => {
+    setAnchorElNav(null);
+  };
+
+  const handleLogout = (userType: 'admin' | 'customer') => {
+    const tokenKey = userType === 'admin' ? 'auth-token' : 'customer-auth-token';
+    localStorage.removeItem(tokenKey);
+    localStorage.removeItem('user'); // Limpa também os dados do usuário
     setIsAdminAuthenticated(false);
+    setIsCustomerAuthenticated(false);
+    handleCloseNavMenu();
     navigate('/');
   };
 
-  const handleCustomerLogout = () => {
-    localStorage.removeItem('customer-auth-token');
-    setIsCustomerAuthenticated(false);
-    navigate('/');
+  const commonPages = [
+    { name: 'Início', path: '/' },
+    { name: 'Sobre', path: '/about' },
+    { name: 'Serviços', path: '/services' },
+    { name: 'Agendamento', path: '/booking' },
+  ];
+
+  const renderNavLinks = (isMobile: boolean) => {
+    const links = [...commonPages];
+    const Component = isMobile ? MenuItem : Button;
+    const props = isMobile ? { onClick: handleCloseNavMenu } : { sx: { color: 'yellow', my: 2, display: 'block' } };
+
+    if (isAdminAuthenticated) {
+      links.push({ name: 'Painel Admin', path: '/dashboard' });
+    } else if (isCustomerAuthenticated) {
+      links.push({ name: 'Painel Cliente', path: '/customer/dashboard' });
+    }
+
+    return links.map((page) => (
+      <Component key={page.name} component={Link} to={page.path} {...props}>
+        {page.name}
+      </Component>
+    ));
+  };
+
+  const renderAuthButtons = (isMobile: boolean) => {
+    const Component = isMobile ? MenuItem : Button;
+    const commonProps = isMobile ? { onClick: handleCloseNavMenu } : {};
+
+    if (isAdminAuthenticated) {
+      return <Component {...commonProps} onClick={() => handleLogout('admin')} sx={{ color: 'yellow' }}>Sair Admin</Component>;
+    } else if (isCustomerAuthenticated) {
+      return <Component {...commonProps} onClick={() => handleLogout('customer')} sx={{ color: 'yellow' }}>Sair Cliente</Component>;
+    } else {
+      return (
+        <>
+          <Component {...commonProps} component={Link} to="/login" sx={{ color: 'yellow' }}>Login</Component>
+          <Component {...commonProps} component={Link} to="/customer/register" sx={{ color: 'yellow' }}>Cadastro Cliente</Component>
+        </>
+      );
+    }
   };
 
   return (
-    <Navbar bg="dark" variant="dark" expand="lg" style={{ borderBottom: '2px solid yellow' }}>
-      <Container>
-        <Navbar.Brand as={Link} to="/">
-          <img
-            src={logo}
-            height="40"
-            className="d-inline-block align-top me-2"
-            alt="Studio Carvalho Estetica Automotiva logo"
-          />
-          <span style={{ color: 'yellow', fontWeight: 'bold' }}>Studio Carvalho Estetica Automotiva</span>
-        </Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="ms-auto">
-            <Nav.Link as={Link} to="/" style={{ color: 'yellow' }}>Início</Nav.Link>
-            <Nav.Link as={Link} to="/about" style={{ color: 'yellow' }}>Sobre</Nav.Link>
-            <Nav.Link as={Link} to="/services" style={{ color: 'yellow' }}>Serviços</Nav.Link>
-            <Nav.Link as={Link} to="/booking" style={{ color: 'yellow' }}>Agendamento</Nav.Link>
+    <AppBar position="static" sx={{ bgcolor: '#212529', borderBottom: '2px solid yellow' }}>
+      <Container maxWidth="xl">
+        <Toolbar disableGutters>
+          {/* --- Desktop Logo --- */}
+          <Typography
+            variant="h6"
+            noWrap
+            component={Link}
+            to="/"
+            sx={{
+              mr: 2,
+              display: { xs: 'none', md: 'flex' },
+              alignItems: 'center',
+              fontFamily: 'monospace',
+              fontWeight: 700,
+              letterSpacing: '.1rem',
+              color: 'yellow',
+              textDecoration: 'none',
+            }}
+          >
+            <img src={logo} height="40" alt="logo" style={{ marginRight: '10px' }} />
+            Studio Carvalho
+          </Typography>
 
-            {isAdminAuthenticated ? (
-              <>
-                <Nav.Link as={Link} to="/dashboard" style={{ color: 'yellow' }}>Painel Admin</Nav.Link>
-                <Button variant="outline-warning" onClick={handleAdminLogout} className="ms-2">Sair Admin</Button>
-              </>
-            ) : isCustomerAuthenticated ? (
-              <>
-                <Nav.Link as={Link} to="/customer/dashboard" style={{ color: 'yellow' }}>Painel Cliente</Nav.Link>
-                <Button variant="outline-info" onClick={handleCustomerLogout} className="ms-2">Sair Cliente</Button>
-              </>
-            ) : (
-              <>
-                <Nav.Link as={Link} to="/login" style={{ color: 'yellow' }}>Login</Nav.Link>
-                <Nav.Link as={Link} to="/customer/register" style={{ color: 'yellow' }}>Cadastro Cliente</Nav.Link>
-              </>
-            )}
-          </Nav>
-        </Navbar.Collapse>
+          {/* --- Mobile Menu --- */}
+          <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
+            <IconButton
+              size="large"
+              aria-label="account of current user"
+              aria-controls="menu-appbar"
+              aria-haspopup="true"
+              onClick={handleOpenNavMenu}
+              color="inherit"
+            >
+              <MenuIcon />
+            </IconButton>
+            <Menu
+              id="menu-appbar"
+              anchorEl={anchorElNav}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'left',
+              }}
+              keepMounted
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'left',
+              }}
+              open={Boolean(anchorElNav)}
+              onClose={handleCloseNavMenu}
+              sx={{ display: { xs: 'block', md: 'none' } }}
+            >
+              {renderNavLinks(true)}
+              {renderAuthButtons(true)}
+            </Menu>
+          </Box>
+
+          {/* --- Mobile Logo --- */}
+          <Typography
+            variant="h5"
+            noWrap
+            component={Link}
+            to="/"
+            sx={{
+              mr: 2,
+              display: { xs: 'flex', md: 'none' },
+              flexGrow: 1,
+              alignItems: 'center',
+              fontFamily: 'monospace',
+              fontWeight: 700,
+              letterSpacing: '.1rem',
+              color: 'yellow',
+              textDecoration: 'none',
+            }}
+          >
+            <img src={logo} height="30" alt="logo" style={{ marginRight: '8px' }} />
+            Studio Carvalho
+          </Typography>
+
+          {/* --- Desktop Links --- */}
+          <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, justifyContent: 'flex-end' }}>
+            {renderNavLinks(false)}
+            {renderAuthButtons(false)}
+          </Box>
+        </Toolbar>
       </Container>
-    </Navbar>
+    </AppBar>
   );
-}
+};
 
 export default Header;

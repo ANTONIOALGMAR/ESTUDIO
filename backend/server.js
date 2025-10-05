@@ -4,9 +4,11 @@ const express = require('express');
 const createError = require('http-errors');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const helmet = require('helmet'); // Importa o Helmet
 
 // Initialize Express app
 const app = express();
+app.use(helmet()); // Usa o Helmet para segurança dos headers
 const port = process.env.PORT || 5001;
 
 // Middleware

@@ -44,3 +44,21 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+---
+
+## Melhorias de Segurança no Backend
+
+Para aumentar a robustez e a segurança da aplicação, uma série de melhorias foram implementadas no servidor backend (Node.js/Express).
+
+### Principais Melhorias Implementadas
+
+*   **Variáveis de Ambiente para Segredos**: Chaves sensíveis (como o segredo JWT) foram movidas do código-fonte para um arquivo `.env`, utilizando o pacote `dotenv`. Isso previne a exposição de segredos caso o código-fonte seja comprometido.
+
+*   **Validação de Dados de Entrada**: Foi implementada a biblioteca `joi` para criar esquemas de validação para as rotas da API (ex: `/login`, `/register`). Isso garante a integridade dos dados e protege contra payloads maliciosos.
+
+*   **Proteção Contra Ataques de Força Bruta**: O endpoint `/login` foi protegido contra ataques de força bruta com o uso do `express-rate-limit`. Isso limita o número de tentativas de login a partir de um mesmo endereço de IP.
+
+*   **Headers de Segurança HTTP**: O middleware `helmet` foi adicionado para configurar headers HTTP seguros, protegendo a aplicação de vulnerabilidades web comuns como XSS (Cross-Site Scripting) e clickjacking.
+
+*   **Auditoria de Dependências**: Foi realizada uma auditoria de segurança com `npm audit`. Vulnerabilidades foram identificadas em dependências de desenvolvimento, e uma abordagem cautelosa foi adotada para evitar quebrar a aplicação, planejando uma refatoração futura para lidar com elas.

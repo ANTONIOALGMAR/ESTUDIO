@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Button, Table, Spinner, Alert } from 'react-bootstrap';
-import UserFormModal, { IUser } from '../../components/UserFormModal'; // Importa o modal e a interface
+import { Box, Button, Typography, Alert, CircularProgress } from '@mui/material';
+import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+import UserFormModal, { IUser } from '../../components/UserFormModal';
 
 const AdminEmployees = () => {
   const [users, setUsers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  // Estados para o Modal
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<IUser | null>(null);
 
@@ -18,21 +17,14 @@ const AdminEmployees = () => {
       setLoading(false);
       return;
     }
-
     try {
       setLoading(true);
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
-      const response = await fetch(`${apiUrl}/api/users`, {
-        headers: {
-          'auth-token': token,
-        },
-      });
-
+      const response = await fetch(`${apiUrl}/api/users`, { headers: { 'auth-token': token } });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Falha ao buscar usuários.');
       }
-
       const data = await response.json();
       setUsers(data);
     } catch (err: any) {
@@ -62,27 +54,20 @@ const AdminEmployees = () => {
     const url = userData._id
       ? `${process.env.REACT_APP_API_URL}/api/users/${userData._id}`
       : `${process.env.REACT_APP_API_URL}/api/users`;
-
     try {
       const response = await fetch(url, {
         method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          'auth-token': token!,
-        },
+        headers: { 'Content-Type': 'application/json', 'auth-token': token! },
         body: JSON.stringify(userData),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Falha ao salvar usuário.');
       }
-
       handleCloseModal();
-      fetchUsers(); // Re-busca os usuários para atualizar a lista
+      fetchUsers();
     } catch (err: any) {
       setError(err.message);
-      // Não fechar o modal em caso de erro para o usuário poder corrigir
     }
   };
 
@@ -92,72 +77,73 @@ const AdminEmployees = () => {
       try {
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${id}`, {
           method: 'DELETE',
-          headers: {
-            'auth-token': token!,
-          },
+          headers: { 'auth-token': token! },
         });
-
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || 'Falha ao excluir usuário.');
         }
-        
-        fetchUsers(); // Re-busca os usuários
-      } catch (err: any) {
-        setError(err.message);
-      }
+        fetchUsers();
+      } catch (err: any) { setError(err.message); }
     }
   };
 
+  const columns: GridColDef[] = [
+    { field: 'fullName', headerName: 'Nome Completo', flex: 1 },
+    { field: 'email', headerName: 'Email', flex: 1 },
+    {
+      field: 'role',
+      headerName: 'Função',
+      flex: 0.5,
+      valueGetter: (value) => value === 'admin' ? 'Administrador' : 'Funcionário',
+    },
+    {
+      field: 'createdAt',
+      headerName: 'Membro Desde',
+      flex: 0.5,
+      valueGetter: (value) => value ? new Date(value).toLocaleDateString('pt-BR') : 'N/A',
+    },
+    {
+      field: 'actions',
+      headerName: 'Ações',
+      sortable: false,
+      flex: 1,
+      renderCell: (params: GridRenderCellParams) => (
+        <Box>
+          <Button variant="outlined" size="small" onClick={() => handleOpenModal(params.row)} sx={{ mr: 1 }}>
+            Editar
+          </Button>
+          <Button variant="outlined" size="small" color="error" onClick={() => handleDeleteUser(params.id as string)}>
+            Excluir
+          </Button>
+        </Box>
+      ),
+    },
+  ];
+
   return (
-    <Container fluid>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1>Gestão de Funcionários</h1>
-        <Button variant="primary" onClick={() => handleOpenModal(null)}>
+    <Box sx={{ p: 3, width: '100%' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h4">Gestão de Funcionários</Typography>
+        <Button variant="contained" onClick={() => handleOpenModal(null)}>
           Adicionar Novo Funcionário
         </Button>
-      </div>
+      </Box>
 
-      {loading && (
-        <div className="text-center">
-          <Spinner animation="border" variant="primary" />
-          <p>Carregando funcionários...</p>
-        </div>
-      )}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      {error && <Alert variant="danger">{error}</Alert>}
-
-      {!loading && !error && (
-        <Table striped bordered hover responsive>
-          <thead>
-            <tr>
-              <th>Nome Completo</th>
-              <th>Email</th>
-              <th>Função</th>
-              <th>Membro Desde</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user._id}>
-                <td>{user.fullName}</td>
-                <td>{user.email}</td>
-                <td>{user.role === 'admin' ? 'Administrador' : 'Funcionário'}</td>
-                <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : 'N/A'}</td>
-                <td>
-                  <Button variant="outline-secondary" size="sm" className="me-2" onClick={() => handleOpenModal(user)}>
-                    Editar
-                  </Button>
-                  <Button variant="outline-danger" size="sm" onClick={() => handleDeleteUser(user._id!)}>
-                    Excluir
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      )}
+      <Box sx={{ height: 650, width: '100%' }}>
+        <DataGrid
+          rows={users}
+          columns={columns}
+          loading={loading}
+          getRowId={(row) => row._id!}
+          initialState={{
+            pagination: { paginationModel: { pageSize: 10 } },
+          }}
+          pageSizeOptions={[5, 10, 20]}
+        />
+      </Box>
 
       <UserFormModal 
         show={showModal}
@@ -165,7 +151,7 @@ const AdminEmployees = () => {
         onSave={handleSaveUser}
         user={editingUser}
       />
-    </Container>
+    </Box>
   );
 };
 
