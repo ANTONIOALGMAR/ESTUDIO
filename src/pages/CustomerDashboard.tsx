@@ -92,6 +92,35 @@ const CustomerDashboard = () => {
     }
   };
 
+  const handleCancelBooking = async (bookingId: string) => {
+    if (!window.confirm('Tem certeza que deseja cancelar este agendamento?')) {
+      return;
+    }
+
+    const token = localStorage.getItem('customer-auth-token');
+    if (!token) return;
+
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
+      const response = await fetch(`${apiUrl}/api/bookings/${bookingId}/cancel`, {
+        method: 'PUT',
+        headers: {
+          'customer-auth-token': token,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao cancelar agendamento.');
+      }
+
+      // Re-busca os agendamentos para atualizar a lista
+      fetchCustomerBookings();
+
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   if (loading) {
     return (
       <Container className="text-center mt-5">
@@ -136,6 +165,7 @@ const CustomerDashboard = () => {
               <th>Placa</th>
               <th>Data do Serviço</th>
               <th>Status</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -147,6 +177,17 @@ const CustomerDashboard = () => {
                 <td>{booking.licensePlate}</td>
                 <td>{new Date(booking.date).toLocaleDateString('pt-BR')}</td>
                 <td>{booking.status}</td>
+                <td>
+                  {booking.status === 'aguardando' && (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleCancelBooking(booking._id)}
+                    >
+                      Cancelar
+                    </Button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

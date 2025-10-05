@@ -171,6 +171,38 @@ router.put('/:id', verifyToken, async (req, res) => {
   }
 });
 
+// Rota para um cliente cancelar seu próprio agendamento (Protegida)
+router.put('/:id/cancel', verifyToken, async (req, res) => {
+  try {
+    if (!req.user || !req.user.isCustomer) {
+      return res.status(403).json({ message: 'Acesso negado. Apenas clientes podem cancelar agendamentos.' });
+    }
+
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Agendamento não encontrado.' });
+    }
+
+    // Verifica se o cliente logado é o dono do agendamento
+    if (booking.customerId.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Você não tem permissão para cancelar este agendamento.' });
+    }
+
+    // Opcional: Adicionar regras de negócio, como não poder cancelar perto da data
+    // Por exemplo: if (dayjs(booking.date).isBefore(dayjs().add(1, 'day'))) { ... }
+
+    booking.status = 'Cancelado pelo Cliente';
+    const savedBooking = await booking.save();
+
+    res.json(savedBooking);
+
+  } catch (error) {
+    console.error('ERRO AO CANCELAR AGENDAMENTO:', error);
+    res.status(500).json({ message: 'Erro ao cancelar agendamento.' });
+  }
+});
+
 // Rota para associar agendamentos existentes a um cliente (Protegida)
 router.post('/associate-customer', verifyToken, async (req, res) => {
   try {
