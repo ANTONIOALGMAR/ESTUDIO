@@ -55,8 +55,6 @@ const Header = () => {
 
   const renderNavLinks = (isMobile: boolean) => {
     const links = [...commonPages];
-    const Component = isMobile ? MenuItem : Button;
-    const props = isMobile ? { onClick: handleCloseNavMenu } : { sx: { color: 'yellow', my: 2, display: 'block' } };
 
     if (isAdminAuthenticated) {
       links.push({ name: 'Painel Admin', path: '/dashboard' });
@@ -65,9 +63,14 @@ const Header = () => {
     }
 
     return links.map((page) => (
-      <Component key={page.name} component={Link} to={page.path} {...props}>
-        {page.name}
-      </Component>
+      isMobile ?
+        <MenuItem key={page.name} component={Link} to={page.path} onClick={handleCloseNavMenu}>
+          {page.name}
+        </MenuItem>
+      :
+        <Button key={page.name} component={Link} to={page.path} sx={{ color: 'yellow', my: 2, display: 'block' }}>
+          {page.name}
+        </Button>
     ));
   };
 
