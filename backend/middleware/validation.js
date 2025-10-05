@@ -36,7 +36,7 @@ const registerSchema = Joi.object({
   userType: Joi.string().valid('admin', 'customer').required().messages({
     'string.base': 'O tipo de usuário deve ser um texto.',
     'string.empty': 'O tipo de usuário não pode estar vazio.',
-    'any.only': 'O tipo de usuário deve ser 'admin' ou 'customer'.',
+    'any.only': "O tipo de usuário deve ser 'admin' ou 'customer'.",
     'any.required': 'O campo tipo de usuário é obrigatório.'
   })
 });
