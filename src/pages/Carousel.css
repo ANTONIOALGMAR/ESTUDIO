@@ -24,3 +24,10 @@
   padding: 15px;
   border-radius: 5px;
 }
+
+/* Força a visibilidade das setas do carrossel */
+.slick-prev::before,
+.slick-next::before {
+  color: yellow !important; /* Usa a cor do tema e !important para garantir a sobreposição */
+  font-size: 30px; /* Tamanho maior para fácil visualização */
+}
