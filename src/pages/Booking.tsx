@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Box, Typography, Grid, TextField, FormControl, FormLabel, FormGroup, FormControlLabel, Checkbox, Button, Alert, CircularProgress } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs, { Dayjs } from 'dayjs';
 
 const ALL_SERVICES = [
@@ -40,22 +40,40 @@ const Booking = () => {
   const [neighborhood, setNeighborhood] = useState('');
   const [city, setCity] = useState('');
 
-  const navigate = useNavigate();
+  // State for reschedule mode
+  const [rescheduleId, setRescheduleId] = useState<string | null>(null);
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Effect to pre-fill form for rescheduling
   useEffect(() => {
-    const customerToken = localStorage.getItem('customer-auth-token');
-    const userData = localStorage.getItem('user');
-    if (customerToken && userData) {
-      try {
-        const user = JSON.parse(userData);
-        setFullName(user.fullName || '');
-        setEmail(user.email || '');
-        setPhone(user.phone || '');
-      } catch (error) {
-        console.error("Erro ao parsear dados do usuário:", error);
+    const { bookingToReschedule } = location.state || {};
+    if (bookingToReschedule) {
+      setRescheduleId(bookingToReschedule._id);
+      setFullName(bookingToReschedule.fullName || '');
+      setEmail(bookingToReschedule.email || '');
+      setPhone(bookingToReschedule.phone || '');
+      setCar(bookingToReschedule.car || '');
+      setLicensePlate(bookingToReschedule.licensePlate || '');
+      setServices(Array.isArray(bookingToReschedule.service) ? bookingToReschedule.service : [bookingToReschedule.service]);
+      // Não preenchemos a data, pois é o que o usuário vai alterar
+      setDate(null);
+    } else {
+      // Preenche com dados do usuário logado se não for remarcação
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          setFullName(user.fullName || '');
+          setEmail(user.email || '');
+          setPhone(user.phone || '');
+        } catch (error) {
+          console.error("Erro ao parsear dados do usuário:", error);
+        }
       }
     }
-  }, []);
+  }, [location.state]);
 
   const handleServiceChange = (serviceName: string) => {
     setServices(prevServices => 
@@ -86,6 +104,7 @@ const Booking = () => {
     setServices([]); setDate(null); setCreateAccount(false); setPassword('');
     setCep(''); setAddressState(''); setNumber(''); setComplement(''); setNeighborhood(''); setCity('');
     setShowAddress(false);
+    setRescheduleId(null);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -93,13 +112,47 @@ const Booking = () => {
     setFeedback(null);
     setLoading(true);
 
-    if (services.length === 0) {
-      setFeedback({ type: 'error', message: 'Por favor, selecione ao menos um serviço.' });
+    if (!date) {
+      setFeedback({ type: 'error', message: 'Por favor, selecione uma nova data para remarcar.' });
       setLoading(false);
       return;
     }
-    if (!date) {
-      setFeedback({ type: 'error', message: 'Por favor, selecione uma data para o agendamento.' });
+
+    // --- RESCHEDULE LOGIC ---
+    if (rescheduleId) {
+      const token = localStorage.getItem('customer-auth-token');
+      if (!token) {
+        setFeedback({ type: 'error', message: 'Sessão expirada. Faça login novamente.' });
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bookings/${rescheduleId}/reschedule`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'customer-auth-token': token
+          },
+          body: JSON.stringify({ date: date.format('YYYY-MM-DD') }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Falha ao remarcar agendamento.');
+
+        setFeedback({ type: 'success', message: 'Agendamento remarcado com sucesso!' });
+        setTimeout(() => navigate('/customer/dashboard'), 2000);
+
+      } catch (error: any) {
+        setFeedback({ type: 'error', message: error.message || 'Ocorreu um erro ao remarcar.' });
+      } finally {
+        setLoading(false);
+      }
+      return; // Encerra a função aqui
+    }
+
+    // --- CREATE NEW BOOKING LOGIC ---
+    if (services.length === 0) {
+      setFeedback({ type: 'error', message: 'Por favor, selecione ao menos um serviço.' });
       setLoading(false);
       return;
     }
@@ -141,33 +194,39 @@ const Booking = () => {
     }
   };
 
+  const isRescheduleMode = !!rescheduleId;
+
   return (
     <Container sx={{ py: 5 }} maxWidth="md">
-      <Typography variant="h4" component="h1" gutterBottom textAlign="center">Agendamento de Serviços</Typography>
-      <Typography variant="body1" textAlign="center" mb={4}>Preencha o formulário abaixo e selecione os serviços desejados.</Typography>
+      <Typography variant="h4" component="h1" gutterBottom textAlign="center">
+        {isRescheduleMode ? 'Remarcar Agendamento' : 'Agendamento de Serviços'}
+      </Typography>
+      <Typography variant="body1" textAlign="center" mb={4}>
+        {isRescheduleMode ? 'Selecione uma nova data para o seu agendamento.' : 'Preencha o formulário abaixo e selecione os serviços desejados.'}
+      </Typography>
       
       {feedback && <Alert severity={feedback.type} sx={{ mb: 2 }}>{feedback.message}</Alert>}
 
       <Box component="form" onSubmit={handleSubmit}>
         <Grid container spacing={3}>
           <Grid item xs={12}>
-            <TextField fullWidth label="Nome Completo" value={fullName} onChange={e => setFullName(e.target.value)} required />
+            <TextField fullWidth label="Nome Completo" value={fullName} onChange={e => setFullName(e.target.value)} required disabled={isRescheduleMode} />
           </Grid>
           <Grid item xs={12} md={6}>
-            <TextField fullWidth type="email" label="Email" value={email} onChange={e => setEmail(e.target.value)} required />
+            <TextField fullWidth type="email" label="Email" value={email} onChange={e => setEmail(e.target.value)} required disabled={isRescheduleMode} />
           </Grid>
           <Grid item xs={12} md={6}>
-            <TextField fullWidth type="tel" label="Telefone" placeholder="(11) 99999-9999" value={phone} onChange={e => setPhone(e.target.value)} required />
+            <TextField fullWidth type="tel" label="Telefone" placeholder="(11) 99999-9999" value={phone} onChange={e => setPhone(e.target.value)} required disabled={isRescheduleMode} />
           </Grid>
           <Grid item xs={12} md={6}>
-            <TextField fullWidth label="Carro" placeholder="Ex: Honda Civic" value={car} onChange={e => setCar(e.target.value)} />
+            <TextField fullWidth label="Carro" placeholder="Ex: Honda Civic" value={car} onChange={e => setCar(e.target.value)} disabled={isRescheduleMode} />
           </Grid>
           <Grid item xs={12} md={6}>
-            <TextField fullWidth label="Placa" placeholder="Ex: ABC-1234" value={licensePlate} onChange={e => setLicensePlate(e.target.value)} />
+            <TextField fullWidth label="Placa" placeholder="Ex: ABC-1234" value={licensePlate} onChange={e => setLicensePlate(e.target.value)} disabled={isRescheduleMode} />
           </Grid>
 
           <Grid item xs={12} md={6}>
-            <FormControl component="fieldset" fullWidth>
+            <FormControl component="fieldset" fullWidth disabled={isRescheduleMode}>
               <FormLabel component="legend">Selecione o(s) Serviço(s)</FormLabel>
               <FormGroup>
                 <Grid container>
@@ -186,60 +245,64 @@ const Booking = () => {
 
           <Grid item xs={12} md={6} container alignItems="center">
             <DatePicker
-              label="Data do Agendamento"
+              label={isRescheduleMode ? "Nova Data do Agendamento" : "Data do Agendamento"}
               value={date}
               onChange={(newValue) => setDate(newValue)}
               sx={{ width: '100%' }}
             />
           </Grid>
 
-          <Grid item xs={12}>
-            <FormControlLabel
-              control={<Checkbox checked={showAddress} onChange={(e) => setShowAddress(e.target.checked)} />}
-              label="Necessito do serviço Leva e Trás"
-            />
-          </Grid>
-
-          {showAddress && (
+          {!isRescheduleMode && (
             <>
-              <Grid item xs={12}><Typography variant="h6">Endereço de Retirada e Entrega</Typography></Grid>
-              <Grid item xs={12} md={4}>
-                <TextField fullWidth label="CEP" value={cep} onChange={e => setCep(e.target.value.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2'))} onBlur={e => fetchCepData(e.target.value)} inputProps={{ maxLength: 9 }} />
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={<Checkbox checked={showAddress} onChange={(e) => setShowAddress(e.target.checked)} />}
+                  label="Necessito do serviço Leva e Trás"
+                />
               </Grid>
-              <Grid item xs={12} md={8}>
-                <TextField fullWidth label="Endereço" value={address} onChange={e => setAddressState(e.target.value)} />
+
+              {showAddress && (
+                <>
+                  <Grid item xs={12}><Typography variant="h6">Endereço de Retirada e Entrega</Typography></Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField fullWidth label="CEP" value={cep} onChange={e => setCep(e.target.value.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2'))} onBlur={e => fetchCepData(e.target.value)} inputProps={{ maxLength: 9 }} />
+                  </Grid>
+                  <Grid item xs={12} md={8}>
+                    <TextField fullWidth label="Endereço" value={address} onChange={e => setAddressState(e.target.value)} />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField fullWidth label="Número" value={number} onChange={e => setNumber(e.target.value)} />
+                  </Grid>
+                  <Grid item xs={12} md={8}>
+                    <TextField fullWidth label="Complemento" value={complement} onChange={e => setComplement(e.target.value)} />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField fullWidth label="Bairro" value={neighborhood} onChange={e => setNeighborhood(e.target.value)} />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField fullWidth label="Cidade" value={city} onChange={e => setCity(e.target.value)} />
+                  </Grid>
+                </>
+              )}
+
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={<Checkbox checked={createAccount} onChange={(e) => setCreateAccount(e.target.checked)} />}
+                  label="Deseja criar uma conta para acompanhar seu agendamento?"
+                />
               </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField fullWidth label="Número" value={number} onChange={e => setNumber(e.target.value)} />
-              </Grid>
-              <Grid item xs={12} md={8}>
-                <TextField fullWidth label="Complemento" value={complement} onChange={e => setComplement(e.target.value)} />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField fullWidth label="Bairro" value={neighborhood} onChange={e => setNeighborhood(e.target.value)} />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField fullWidth label="Cidade" value={city} onChange={e => setCity(e.target.value)} />
-              </Grid>
+
+              {createAccount && (
+                <Grid item xs={12} md={6}>
+                  <TextField fullWidth type="password" label="Crie uma Senha" value={password} onChange={e => setPassword(e.target.value)} required />
+                </Grid>
+              )}
             </>
           )}
 
           <Grid item xs={12}>
-            <FormControlLabel
-              control={<Checkbox checked={createAccount} onChange={(e) => setCreateAccount(e.target.checked)} />}
-              label="Deseja criar uma conta para acompanhar seu agendamento?"
-            />
-          </Grid>
-
-          {createAccount && (
-            <Grid item xs={12} md={6}>
-              <TextField fullWidth type="password" label="Crie uma Senha" value={password} onChange={e => setPassword(e.target.value)} required />
-            </Grid>
-          )}
-
-          <Grid item xs={12}>
             <Button type="submit" variant="contained" size="large" fullWidth disabled={loading}>
-              {loading ? <CircularProgress size={24} /> : 'Confirmar Agendamento'}
+              {loading ? <CircularProgress size={24} /> : (isRescheduleMode ? 'Confirmar Remarcação' : 'Confirmar Agendamento')}
             </Button>
           </Grid>
         </Grid>

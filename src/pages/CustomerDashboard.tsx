@@ -121,6 +121,10 @@ const CustomerDashboard = () => {
     }
   };
 
+  const handleReschedule = (booking: IBooking) => {
+    navigate('/booking', { state: { bookingToReschedule: booking } });
+  };
+
   if (loading) {
     return (
       <Container className="text-center mt-5">
@@ -179,13 +183,23 @@ const CustomerDashboard = () => {
                 <td>{booking.status}</td>
                 <td>
                   {booking.status === 'aguardando' && (
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => handleCancelBooking(booking._id)}
-                    >
-                      Cancelar
-                    </Button>
+                    <>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleCancelBooking(booking._id)}
+                        style={{ marginRight: '5px' }}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        variant="info"
+                        size="sm"
+                        onClick={() => handleReschedule(booking)}
+                      >
+                        Remarcar
+                      </Button>
+                    </>
                   )}
                 </td>
               </tr>
