@@ -128,7 +128,7 @@ const CustomerDetails = () => {
               <tr key={booking._id}>
                 <td>{new Date(booking.createdAt).toLocaleDateString('pt-BR')}</td>
                 <td>{new Date(booking.date).toLocaleDateString('pt-BR')}</td>
-                <td>{booking.service.join(', ')}</td>
+                <td>{Array.isArray(booking.service) ? booking.service.join(', ') : booking.service}</td>
                 <td>{booking.status}</td>
               </tr>
             ))
