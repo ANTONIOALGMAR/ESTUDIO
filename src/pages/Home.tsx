@@ -5,6 +5,7 @@ import { Box, Typography } from '@mui/material';
 // Import slick carousel styles
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import './Carousel.css'; // Import our custom carousel styles
 
 const slides = [
   {
@@ -25,19 +26,26 @@ const slides = [
     title: "Lavagem Detalhada",
     description: "Cuidado minucioso para cada parte do seu carro.",
   },
-  {
-    src: "https://images.pexels.com/photos/3729464/pexels-photo-3729464.jpeg?auto=compress&cs=tinysrgb&w=1280",
-    alt: "Manutenção Preventiva",
-    title: "Manutenção Preventiva",
-    description: "Conserve a beleza e a performance do seu veículo com nossos cuidados preventivos.",
-  },
-  {
-    src: "https://images.pexels.com/photos/1715193/pexels-photo-1715193.jpeg?auto=compress&cs=tinysrgb&w=1280",
-    alt: "Serviços para Motos",
-    title: "Serviços para Motos",
-    description: "Cuidado e detalhamento especializado para sua motocicleta.",
-  },
 ];
+
+// Custom Arrow Components
+const NextArrow = (props: any) => {
+  const { onClick } = props;
+  return (
+    <div className="custom-arrow custom-next" onClick={onClick}>
+      →
+    </div>
+  );
+};
+
+const PrevArrow = (props: any) => {
+  const { onClick } = props;
+  return (
+    <div className="custom-arrow custom-prev" onClick={onClick}>
+      ←
+    </div>
+  );
+};
 
 const Home = () => {
   const settings = {
@@ -50,10 +58,12 @@ const Home = () => {
     autoplaySpeed: 3000,
     pauseOnHover: true,
     arrows: true,
+    nextArrow: <NextArrow />,
+    prevArrow: <PrevArrow />,
   };
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ width: '100%', position: 'relative' }}>
       <Slider {...settings}>
         {slides.map((slide, index) => (
           <Box key={index} sx={{ position: 'relative', height: '80vh' }}>
