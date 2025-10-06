@@ -203,6 +203,44 @@ router.put('/:id/cancel', verifyToken, async (req, res) => {
   }
 });
 
+// Rota para um cliente remarcar seu próprio agendamento (Protegida)
+router.put('/:id/reschedule', verifyToken, async (req, res) => {
+  try {
+    if (!req.user || !req.user.isCustomer) {
+      return res.status(403).json({ message: 'Acesso negado. Apenas clientes podem remarcar agendamentos.' });
+    }
+
+    const { date } = req.body; // A nova data virá no corpo da requisição
+    if (!date) {
+      return res.status(400).json({ message: 'A nova data é obrigatória.' });
+    }
+
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Agendamento não encontrado.' });
+    }
+
+    if (booking.customerId.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Você não tem permissão para remarcar este agendamento.' });
+    }
+
+    if (booking.status !== 'aguardando') {
+      return res.status(400).json({ message: `Agendamentos com status '${booking.status}' não podem ser remarcados.` });
+    }
+
+    booking.date = date;
+    // Opcional: Poderíamos mudar o status para 'Remarcado', mas manter 'aguardando' também funciona.
+    const updatedBooking = await booking.save();
+
+    res.json(updatedBooking);
+
+  } catch (error) {
+    console.error('ERRO AO REMARCAR AGENDAMENTO:', error);
+    res.status(500).json({ message: 'Erro ao remarcar agendamento.' });
+  }
+});
+
 // Rota para associar agendamentos existentes a um cliente (Protegida)
 router.post('/associate-customer', verifyToken, async (req, res) => {
   try {

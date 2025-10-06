@@ -53,7 +53,7 @@ const Home = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', overflow: 'hidden' }}>
+    <Box sx={{ width: '100%' }}>
       <Slider {...settings}>
         {slides.map((slide, index) => (
           <Box key={index} sx={{ position: 'relative', height: '80vh' }}>
