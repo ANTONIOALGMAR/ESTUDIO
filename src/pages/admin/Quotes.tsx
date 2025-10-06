@@ -1,19 +1,3 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Button, Alert } from '@mui/material';
-import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
-
-// Interface para o Orçamento (deve corresponder ao modelo do backend)
-interface IQuote {
-  _id: string;
-  quoteNumber: string;
-  customer: {
-    name: string;
-    email?: string;
-  };
-  totalPrice: number;
-  status: string;
-  createdAt: string;
-}
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Box, Typography, Button, Alert } from '@mui/material';
