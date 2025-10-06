@@ -23,6 +23,9 @@ const AdminLayout = () => {
           <li>
             <NavLink to="reports">Relatórios</NavLink>
           </li>
+          <li>
+            <NavLink to="quotes">Orçamentos</NavLink>
+          </li>
         </ul>
       </nav>
       <main className="admin-content">

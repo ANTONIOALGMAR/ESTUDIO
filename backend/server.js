@@ -45,6 +45,7 @@ const serviceRoutes = require('./routes/services'); // Importa as rotas de servi
 const customerRoutes = require('./routes/customers'); // Importa as rotas de cliente
 const analyticsRoutes = require('./routes/analytics'); // Importa as rotas de analytics
 const userRoutes = require('./routes/users'); // Importa as rotas de usuário
+const quoteRoutes = require('./routes/quotes'); // Importa as rotas de orçamento
 
 // Route Middlewares
 app.use('/api/unified-auth', unifiedAuthRoutes);
@@ -53,6 +54,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/quotes', quoteRoutes);
 
 
 // Simple test route
