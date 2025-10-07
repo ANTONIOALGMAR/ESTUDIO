@@ -8,6 +8,7 @@ const helmet = require('helmet'); // Importa o Helmet
 
 // Initialize Express app
 const app = express();
+app.set('trust proxy', 1); // Confia no primeiro proxy (necessário para o Render)
 app.use(helmet()); // Usa o Helmet para segurança dos headers
 const port = process.env.PORT || 5001;
 
