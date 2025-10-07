@@ -55,7 +55,7 @@ const Customers = () => {
         <Button
           variant="contained"
           size="small"
-          onClick={() => navigate(`/admin/customer/${params.id}`)}
+          onClick={() => navigate(`/admin/customers/${params.id}`)}
         >
           Ver Detalhes
         </Button>
