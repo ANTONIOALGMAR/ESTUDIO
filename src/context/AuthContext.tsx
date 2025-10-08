@@ -1,5 +1,5 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import api, { setAuthToken } from '../api/api';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
+import api, { setAuthToken, setupInterceptors } from '../api/api';
 
 // Interfaces
 interface IUser {
@@ -11,7 +11,7 @@ interface IUser {
 
 interface IAuthContext {
   user: IUser | null;
-  isLoading: boolean; // Loading state for login/logout operations
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -20,10 +20,25 @@ const AuthContext = createContext<IAuthContext | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<IUser | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false); // For login/logout UI feedback
-  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true); // For initial session check
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
+
+  const logout = useCallback(async () => {
+    try {
+      await api.post('/api/unified-auth/logout');
+    } catch (error) {
+      console.error("Erro no logout do servidor, limpando o estado localmente.", error);
+    } finally {
+      setUser(null);
+      setAuthToken(null);
+    }
+  }, []);
 
   useEffect(() => {
+    // Configura os interceptors, passando a função de logout para eles.
+    // Isso permite que o módulo da API deslogue o usuário se o refresh token falhar.
+    setupInterceptors(logout);
+
     const verifyUser = async () => {
       try {
         const response = await api.get('/api/unified-auth/refresh');
@@ -38,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     verifyUser();
-  }, []);
+  }, [logout]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -55,21 +70,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = async () => {
-    // We don't set loading here, as it might unmount components before navigation completes
-    try {
-      await api.post('/api/unified-auth/logout');
-    } catch (error) {
-      console.error("Erro no logout do servidor, limpando o estado localmente.", error);
-    } finally {
-      setUser(null);
-      setAuthToken(null);
-    }
-  };
-
   return (
     <AuthContext.Provider value={{ user, isLoading, login, logout }}>
-      {/* Only render children after the initial session check is complete */}
       {!isInitialLoading && children}
     </AuthContext.Provider>
   );
