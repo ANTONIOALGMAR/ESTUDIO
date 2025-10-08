@@ -26,7 +26,7 @@ app.use(cors({
     }
   },
   credentials: true,
-  allowedHeaders: ["Content-Type", "auth-token", "customer-auth-token"] // Garanta que os headers de token sejam permitidos
+  allowedHeaders: ["Content-Type", "Authorization", "auth-token", "customer-auth-token"] // Garanta que os headers de token sejam permitidos
 }));
 app.use(express.json());
 app.use(require('cookie-parser')());
