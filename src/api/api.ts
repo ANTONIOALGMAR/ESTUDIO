@@ -31,10 +31,16 @@ api.interceptors.response.use(
   (response) => response, // Se a resposta for sucesso, apenas a retorna
   async (error) => {
     const originalRequest = error.config;
+    const status = error.response?.status;
 
-    // Se o erro for 401/403 e não for uma tentativa de retry
-    if (error.response?.status === 403 && !originalRequest._retry) {
+    // Se o erro for 401 ou 403 e não for uma tentativa de retry
+    if ((status === 401 || status === 403) && !originalRequest._retry) {
       originalRequest._retry = true; // Marca como uma tentativa de retry
+
+      // Previne loop infinito se a própria rota de refresh falhar
+      if (originalRequest.url === '/api/unified-auth/refresh') {
+        return Promise.reject(error);
+      }
 
       try {
         const refreshResponse = await api.get('/api/unified-auth/refresh');
@@ -49,8 +55,6 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Se o refresh falhar, o refresh token é inválido. Deslogamos o usuário.
         setAuthToken(null);
-        // TODO: Chamar a função de logout do AuthContext para limpar o estado do usuário
-        // Por enquanto, redirecionamos para o login
         window.location.href = '/login'; 
         return Promise.reject(refreshError);
       }
