@@ -1,69 +1,66 @@
 const router = require('express').Router();
 const rateLimit = require('express-rate-limit');
-const User = require('../models/User.model'); // Admin User
-const Customer = require('../models/Customer.model'); // Customer User
+const User = require('../models/User.model');
+const Customer = require('../models/Customer.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { validate, registerSchema, loginSchema } = require('../middleware/validation'); // Importa a validação
+const { validate, registerSchema, loginSchema } = require('../middleware/validation');
 
 const JWT_SECRET = require('../config/jwt');
+// É uma boa prática usar um segredo diferente para o refresh token.
+// Adicione REFRESH_TOKEN_SECRET ao seu arquivo .env
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'some-super-strong-secret-for-refresh-token';
 
-// Limiter para a rota de login
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 20, // Limita cada IP a 20 requisições por janela
+  windowMs: 15 * 60 * 1000,
+  max: 20,
   message: 'Muitas tentativas de login deste IP, por favor, tente novamente após 15 minutos.',
-  standardHeaders: true, // Retorna informações do limite nos headers `RateLimit-*`
-  legacyHeaders: false, // Desabilita os headers `X-RateLimit-*`
+  standardHeaders: true,
+  legacyHeaders: false,
 });
-
-// Middleware para extrair e verificar o token
-const extractUserFromToken = async (req, res, next) => {
-  const token = req.header('auth-token');
-  if (!token) return next(); // Continua sem usuário se não houver token
-
-  try {
-    const verified = jwt.verify(token, JWT_SECRET);
-    let user;
-    if (verified.isAdmin) {
-      user = await User.findById(verified.id).select('-password');
-    } else if (verified.isCustomer) {
-      user = await Customer.findById(verified.id).select('-password');
-    }
-    req.user = user; // Anexa o usuário à requisição
-  } catch (err) {
-    // Token inválido ou expirado, simplesmente ignora
-  }
-  next();
-};
 
 router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
   const { email, password } = req.body;
   try {
-    // Verifica se o usuário é um Admin
-    const adminUser = await User.findOne({ email });
-    if (adminUser) {
-      const validPass = await bcrypt.compare(password, adminUser.password);
-      if (!validPass) {
-        return res.status(400).json({ message: 'Email ou senha inválidos.' });
-      }
-      const token = jwt.sign({ id: adminUser._id, isAdmin: true }, JWT_SECRET, { expiresIn: '24h' });
-      return res.json({ token, user: { id: adminUser._id, fullName: adminUser.fullName, email: adminUser.email, userType: 'admin' } });
+    const user = await User.findOne({ email }) || await Customer.findOne({ email });
+
+    if (!user) {
+      return res.status(401).json({ message: 'Email ou senha inválidos.' });
     }
 
-    // Se não for Admin, verifica se é um Cliente
-    const customerUser = await Customer.findOne({ email });
-    if (customerUser) {
-      const validPass = await bcrypt.compare(password, customerUser.password);
-      if (!validPass) {
-        return res.status(400).json({ message: 'Email ou senha inválidos.' });
-      }
-      const token = jwt.sign({ id: customerUser._id, isCustomer: true }, JWT_SECRET, { expiresIn: '24h' });
-      return res.json({ token, user: { id: customerUser._id, fullName: customerUser.fullName, email: customerUser.email, userType: 'customer' } });
+    const validPass = await bcrypt.compare(password, user.password);
+    if (!validPass) {
+      return res.status(401).json({ message: 'Email ou senha inválidos.' });
     }
 
-    // Se o email não for encontrado em nenhuma coleção
-    res.status(400).json({ message: 'Email ou senha inválidos.' });
+    const userType = user.constructor.modelName === 'Customer' ? 'customer' : 'admin';
+
+    const accessToken = jwt.sign(
+      { id: user._id, userType: userType },
+      JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    const refreshToken = jwt.sign(
+      { id: user._id, userType: userType },
+      REFRESH_TOKEN_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.cookie('jwt', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== 'development',
+      sameSite: 'None',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+    });
+
+    res.json({
+      accessToken,
+      user: { id: user._id, fullName: user.fullName, email: user.email, userType: userType }
+    });
 
   } catch (error) {
     console.error('ERRO NO LOGIN UNIFICADO:', error);
@@ -71,16 +68,78 @@ router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
   }
 });
 
-// Nova rota para verificar um token e retornar os dados do usuário
-router.get('/verify-token', extractUserFromToken, (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ message: 'Token inválido ou sessão expirada.' });
-  }
-  // Adiciona o userType com base na estrutura do usuário
-  const userType = req.user.constructor.modelName.toLowerCase(); // 'user' se torna 'admin', 'customer' fica 'customer'
-  const finalUserType = userType === 'user' ? 'admin' : userType;
-  res.json({ user: { ...req.user.toObject(), userType: finalUserType } });
+router.get('/refresh', async (req, res) => {
+  const cookies = req.cookies;
+  if (!cookies?.jwt) return res.sendStatus(401);
+
+  const refreshToken = cookies.jwt;
+  const user = await User.findOne({ refreshToken }).exec() || await Customer.findOne({ refreshToken }).exec();
+
+  if (!user) return res.sendStatus(403);
+
+  jwt.verify(
+    refreshToken,
+    REFRESH_TOKEN_SECRET,
+    (err, decoded) => {
+      if (err || user.id !== decoded.id) return res.sendStatus(403);
+
+      const userType = user.constructor.modelName === 'Customer' ? 'customer' : 'admin';
+      const accessToken = jwt.sign(
+        { id: decoded.id, userType: userType },
+        JWT_SECRET,
+        { expiresIn: '15m' }
+      );
+      res.json({
+        accessToken,
+        user: { id: user._id, fullName: user.fullName, email: user.email, userType: userType }
+      });
+    }
+  );
 });
+
+router.post('/logout', async (req, res) => {
+  const cookies = req.cookies;
+  if (!cookies?.jwt) return res.sendStatus(204);
+
+  const refreshToken = cookies.jwt;
+  const user = await User.findOne({ refreshToken }).exec() || await Customer.findOne({ refreshToken }).exec();
+
+  if (user) {
+    user.refreshToken = undefined;
+    await user.save();
+  }
+
+  res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true });
+  res.sendStatus(204);
+});
+
+// Rota para verificar um token e retornar os dados do usuário (pode ser útil para o frontend)
+router.get('/verify-token', (req, res) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+    if (!token) {
+        return res.status(401).json({ message: 'Token não fornecido.' });
+    }
+
+    jwt.verify(token, JWT_SECRET, async (err, decoded) => {
+        if (err) {
+            return res.status(403).json({ message: 'Token inválido ou expirado.' });
+        }
+
+        try {
+            const user = await User.findById(decoded.id).select('-password -refreshToken') || await Customer.findById(decoded.id).select('-password -refreshToken');
+            if (!user) {
+                return res.status(404).json({ message: 'Usuário do token não encontrado.' });
+            }
+            const userType = user.constructor.modelName === 'Customer' ? 'customer' : 'admin';
+            res.json({ user: { ...user.toObject(), userType } });
+        } catch (error) {
+            res.status(500).json({ message: 'Erro ao buscar usuário do token.' });
+        }
+    });
+});
+
 
 router.post('/register', validate(registerSchema), async (req, res) => {
   const { fullName, email, password, userType } = req.body;
@@ -89,11 +148,8 @@ router.post('/register', validate(registerSchema), async (req, res) => {
     let existingUser;
     if (userType === 'admin') {
       existingUser = await User.findOne({ email });
-    } else if (userType === 'customer') {
-      existingUser = await Customer.findOne({ email });
     } else {
-      // Esta verificação pode ser removida se a validação do Joi for suficiente
-      return res.status(400).json({ message: 'Tipo de usuário inválido.' });
+      existingUser = await Customer.findOne({ email });
     }
 
     if (existingUser) {

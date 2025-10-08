@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Container, 
@@ -12,14 +12,16 @@ import {
   IconButton 
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  
   const navigate = useNavigate();
+  const { login, isLoading, user } = useAuth();
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -29,51 +31,24 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
-
-    const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
 
     try {
-      const response = await fetch(`${apiUrl}/api/unified-auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Falha ao fazer login.');
-      }
-
-      if (data.token && data.user) {
-        localStorage.removeItem('auth-token');
-        localStorage.removeItem('customer-auth-token');
-        
-        const tokenKey = data.user.userType === 'admin' ? 'auth-token' : 'customer-auth-token';
-        localStorage.setItem(tokenKey, data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-
-        if (data.user.userType === 'admin') {
-          navigate('/admin/dashboard');
-        } else if (data.user.userType === 'customer') {
-          navigate('/customer/dashboard');
-        } else {
-          localStorage.removeItem(tokenKey);
-          localStorage.removeItem('user');
-          setError('Tipo de usuário desconhecido.');
-        }
-      } else {
-        throw new Error(data.message || 'Resposta inválida do servidor.');
-      }
+      await login(email, password);
+      // A navegação agora será tratada pelo useEffect abaixo
     } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      setError(err.response?.data?.message || err.message || 'Ocorreu um erro desconhecido.');
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      if (user.userType === 'admin') {
+        navigate('/admin/dashboard');
+      } else if (user.userType === 'customer') {
+        navigate('/customer/dashboard');
+      }
+    }
+  }, [user, navigate]);
 
   return (
     <Container component="main" maxWidth="xs">
@@ -101,6 +76,7 @@ const Login = () => {
             autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
           />
           <TextField
             margin="normal"
@@ -113,6 +89,7 @@ const Login = () => {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -121,6 +98,7 @@ const Login = () => {
                     onClick={handleClickShowPassword}
                     onMouseDown={handleMouseDownPassword}
                     edge="end"
+                    disabled={isLoading}
                   >
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
@@ -133,9 +111,9 @@ const Login = () => {
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
-            disabled={loading}
+            disabled={isLoading}
           >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
+            {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
           </Button>
         </Box>
       </Box>

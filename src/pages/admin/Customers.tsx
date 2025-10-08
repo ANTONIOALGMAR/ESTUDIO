@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Alert } from '@mui/material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { useNavigate } from 'react-router-dom';
+import api from '../../api/api'; // Importando nossa instância do Axios
 
 interface Customer {
   _id: string;
@@ -19,21 +20,12 @@ const Customers = () => {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const token = localStorage.getItem('auth-token');
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/customers`, {
-          headers: {
-            'auth-token': token || '',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('Falha ao buscar clientes.');
-        }
-
-        const data = await response.json();
-        setCustomers(data);
+        // A chamada agora é muito mais simples!
+        // O token é adicionado automaticamente pelo interceptor.
+        const response = await api.get('/api/customers');
+        setCustomers(response.data);
       } catch (err: any) {
-        setError(err.message);
+        setError(err.response?.data?.message || err.message || 'Falha ao buscar clientes.');
       } finally {
         setLoading(false);
       }

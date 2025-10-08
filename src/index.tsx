@@ -9,6 +9,8 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
+import { AuthProvider } from './context/AuthContext';
+
 // Cria um tema customizado para combinar com o estilo do projeto
 const theme = createTheme({
   palette: {
@@ -27,7 +29,9 @@ root.render(
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <App />
+        <AuthProvider>
+          <App />
+        </AuthProvider>
       </ThemeProvider>
     </LocalizationProvider>
   </React.StrictMode>

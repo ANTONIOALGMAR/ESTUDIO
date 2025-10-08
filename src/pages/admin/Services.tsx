@@ -1,42 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Button, Table, Spinner, Alert } from 'react-bootstrap';
 import ServiceFormModal, { IService } from '../../components/ServiceFormModal';
+import api from '../../api/api'; // Importando nossa instância do Axios
 
 const AdminServices = () => {
   const [services, setServices] = useState<IService[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Estados para o Modal
   const [showModal, setShowModal] = useState(false);
   const [editingService, setEditingService] = useState<IService | null>(null);
 
   const fetchServices = useCallback(async () => {
-    const token = localStorage.getItem('auth-token');
-    if (!token) {
-      setError("Token não encontrado. Faça login novamente.");
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
-      const response = await fetch(`${apiUrl}/api/services/all`, {
-        headers: {
-          'auth-token': token,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao buscar serviços.');
-      }
-
-      const data = await response.json();
-      setServices(data);
+      const response = await api.get('/api/services/all');
+      setServices(response.data);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Falha ao buscar serviços.');
     } finally {
       setLoading(false);
     }
@@ -57,54 +38,28 @@ const AdminServices = () => {
   };
 
   const handleSaveService = async (serviceData: IService) => {
-    const token = localStorage.getItem('auth-token');
-    const method = serviceData._id ? 'PUT' : 'POST';
-    const url = serviceData._id
-      ? `${process.env.REACT_APP_API_URL}/api/services/${serviceData._id}`
-      : `${process.env.REACT_APP_API_URL}/api/services`;
-
     try {
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          'auth-token': token!,
-        },
-        body: JSON.stringify(serviceData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao salvar serviço.');
+      if (serviceData._id) {
+        // Atualizar serviço existente
+        await api.put(`/api/services/${serviceData._id}`, serviceData);
+      } else {
+        // Criar novo serviço
+        await api.post('/api/services', serviceData);
       }
-
       handleCloseModal();
       fetchServices(); // Re-busca os serviços para atualizar a lista
     } catch (err: any) {
-      setError(err.message);
-      // Não fechar o modal em caso de erro para o usuário poder corrigir
+      setError(err.response?.data?.message || err.message || 'Falha ao salvar serviço.');
     }
   };
 
   const handleDeleteService = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este serviço?')) {
-      const token = localStorage.getItem('auth-token');
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/services/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'auth-token': token!,
-          },
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Falha ao excluir serviço.');
-        }
-        
+        await api.delete(`/api/services/${id}`);
         fetchServices(); // Re-busca os serviços
       } catch (err: any) {
-        setError(err.message);
+        setError(err.response?.data?.message || err.message || 'Falha ao excluir serviço.');
       }
     }
   };
@@ -159,7 +114,7 @@ const AdminServices = () => {
                         handleDeleteService(service._id);
                       }
                     }}
-                    disabled={!service._id} // Desabilita o botão se não houver ID
+                    disabled={!service._id}
                   >
                     Excluir
                   </Button>

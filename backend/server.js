@@ -29,6 +29,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "auth-token", "customer-auth-token"] // Garanta que os headers de token sejam permitidos
 }));
 app.use(express.json());
+app.use(require('cookie-parser')());
 
 // MongoDB Connection
 const uri = process.env.MONGO_URI;
