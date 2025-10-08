@@ -52,7 +52,7 @@ router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
 
     res.cookie('jwt', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV !== 'development',
+      secure: true, // Forçar cookie seguro em produção, já que o Render usa HTTPS
       sameSite: 'None',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
     });
