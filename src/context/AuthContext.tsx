@@ -12,6 +12,7 @@ interface IUser {
 interface IAuthContext {
   user: IUser | null;
   isLoading: boolean;
+  isInitialLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -71,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, isInitialLoading, login, logout }}>
       {!isInitialLoading && children}
     </AuthContext.Provider>
   );

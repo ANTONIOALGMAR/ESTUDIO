@@ -8,9 +8,9 @@ interface CustomerProtectedRouteProps {
 }
 
 const CustomerProtectedRoute: React.FC<CustomerProtectedRouteProps> = ({ children }) => {
-  const { user, isLoading } = useAuth();
+  const { user, isInitialLoading } = useAuth();
 
-  if (isLoading) {
+  if (isInitialLoading) {
     // Mostra um loading enquanto a sessão está sendo verificada
     return (
       <div className="vh-100 d-flex justify-content-center align-items-center">

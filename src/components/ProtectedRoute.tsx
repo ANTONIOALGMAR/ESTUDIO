@@ -8,9 +8,9 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, isLoading } = useAuth();
+  const { user, isInitialLoading } = useAuth();
 
-  if (isLoading) {
+  if (isInitialLoading) {
     // Enquanto verifica a sessão, mostra um loading para evitar redirecionamentos incorretos
     return (
       <div className="vh-100 d-flex justify-content-center align-items-center">
