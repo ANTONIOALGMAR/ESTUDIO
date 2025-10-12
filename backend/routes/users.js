@@ -2,6 +2,9 @@ const router = require('express').Router();
 const User = require('../models/User.model');
 const bcrypt = require('bcryptjs');
 const verifyAdmin = require('../middleware/verifyAdmin');
+const { checkWeakPassword } = require('../middleware/passwordSecurity');
+const { createResourceLimiter } = require('../middleware/rateLimiter');
+const { securityLogger } = require('../utils/logger');
 
 // ROTA DE ADMIN - Listar todos os usuários (admins e funcionários)
 router.get('/', verifyAdmin, async (req, res) => {
@@ -14,7 +17,7 @@ router.get('/', verifyAdmin, async (req, res) => {
 });
 
 // ROTA DE ADMIN - Criar um novo usuário (admin ou funcionário)
-router.post('/', verifyAdmin, async (req, res) => {
+router.post('/', createResourceLimiter, verifyAdmin, checkWeakPassword, async (req, res) => {
   const { fullName, email, password, role } = req.body;
 
   try {
@@ -37,6 +40,16 @@ router.post('/', verifyAdmin, async (req, res) => {
     });
 
     const savedUser = await newUser.save();
+    
+    // Log da criação de usuário
+    securityLogger.adminAction(
+      req.user.id, 
+      'CREATE_USER', 
+      savedUser._id, 
+      req.ip, 
+      { newUserEmail: email, newUserRole: role }
+    );
+    
     // Retorna o usuário sem a senha
     const { password: userPassword, ...rest } = savedUser._doc;
     res.status(201).json(rest);
@@ -91,6 +104,16 @@ router.delete('/:id', verifyAdmin, async (req, res) => {
     if (!removedUser) {
       return res.status(404).json({ message: 'Usuário não encontrado.' });
     }
+    
+    // Log da exclusão de usuário
+    securityLogger.adminAction(
+      req.user.id,
+      'DELETE_USER',
+      removedUser._id,
+      req.ip,
+      { deletedUserEmail: removedUser.email, deletedUserRole: removedUser.role }
+    );
+    
     res.json({ message: 'Usuário deletado com sucesso.' });
   } catch (err) {
     res.status(500).json({ message: 'Erro ao deletar usuário.', error: err });

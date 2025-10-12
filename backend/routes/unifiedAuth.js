@@ -1,35 +1,33 @@
 const router = require('express').Router();
-const rateLimit = require('express-rate-limit');
 const User = require('../models/User.model');
 const Customer = require('../models/Customer.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { validate, registerSchema, loginSchema } = require('../middleware/validation');
+const { authLimiter, createResourceLimiter } = require('../middleware/rateLimiter');
+const { checkWeakPassword } = require('../middleware/passwordSecurity');
+const { securityLogger } = require('../utils/logger');
 
 const JWT_SECRET = require('../config/jwt');
 // É uma boa prática usar um segredo diferente para o refresh token.
 // Adicione REFRESH_TOKEN_SECRET ao seu arquivo .env
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'some-super-strong-secret-for-refresh-token';
 
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: 'Muitas tentativas de login deste IP, por favor, tente novamente após 15 minutos.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
+router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email }) || await Customer.findOne({ email });
 
     if (!user) {
+      // Log tentativa de login com email inválido
+      securityLogger.loginAttempt(email, false, req.ip, req.get('User-Agent'), { reason: 'user_not_found' });
       return res.status(401).json({ message: 'Email ou senha inválidos.' });
     }
 
     const validPass = await bcrypt.compare(password, user.password);
     if (!validPass) {
+      // Log tentativa de login com senha inválida
+      securityLogger.loginAttempt(email, false, req.ip, req.get('User-Agent'), { reason: 'invalid_password', userId: user._id });
       return res.status(401).json({ message: 'Email ou senha inválidos.' });
     }
 
@@ -49,6 +47,12 @@ router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
 
     user.refreshToken = refreshToken;
     await user.save();
+
+    // Log login bem-sucedido
+    securityLogger.loginAttempt(email, true, req.ip, req.get('User-Agent'), { 
+      userId: user._id, 
+      userType: userType 
+    });
 
     res.cookie('jwt', refreshToken, {
       httpOnly: true,
@@ -141,7 +145,7 @@ router.get('/verify-token', (req, res) => {
 });
 
 
-router.post('/register', validate(registerSchema), async (req, res) => {
+router.post('/register', createResourceLimiter, validate(registerSchema), checkWeakPassword, async (req, res) => {
   const { fullName, email, password, userType } = req.body;
 
   try {

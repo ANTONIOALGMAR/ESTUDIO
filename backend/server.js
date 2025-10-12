@@ -5,11 +5,53 @@ const createError = require('http-errors');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const helmet = require('helmet'); // Importa o Helmet
+const { globalLimiter } = require('./middleware/rateLimiter'); // Importa rate limiting
+const { mongoSanitizer, sanitizeInput } = require('./middleware/sanitization'); // Importa sanitização
+const { forceHTTPS, securityHeaders, blockMaliciousBots } = require('./middleware/httpsRedirect'); // Importa segurança HTTPS
+const { requestLogger, logger } = require('./utils/logger'); // Importa sistema de logging
 
 // Initialize Express app
 const app = express();
 app.set('trust proxy', 1); // Confia no primeiro proxy (necessário para o Render)
-app.use(helmet()); // Usa o Helmet para segurança dos headers
+
+// Aplicar middlewares de segurança primeiro
+app.use(forceHTTPS); // Força HTTPS em produção
+app.use(securityHeaders); // Headers de segurança extras
+app.use(blockMaliciousBots); // Bloqueia bots maliciosos
+
+// Configuração avançada do Helmet para segurança
+app.use(helmet({
+  // Força HTTPS em produção
+  hsts: {
+    maxAge: 31536000, // 1 ano
+    includeSubDomains: true,
+    preload: true
+  },
+  // Controla como o conteúdo pode ser incorporado
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      scriptSrc: ["'self'"],
+      connectSrc: ["'self'", "https://api.render.com"] // Permitir conexões necessárias
+    },
+  },
+  // Impede que o site seja incorporado em iframes
+  frameguard: { action: 'deny' },
+  // Remove header X-Powered-By
+  hidePoweredBy: true,
+  // Previne MIME type sniffing
+  noSniff: true,
+  // Força download de arquivos potencialmente perigosos
+  xssFilter: true,
+  // Controla informações de referrer
+  referrerPolicy: { policy: "same-origin" }
+}));
+
+app.use(globalLimiter); // Aplica rate limiting global
+app.use(requestLogger); // Adiciona logging de requests
 const port = process.env.PORT || 5001;
 
 // Middleware
@@ -29,6 +71,8 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization", "auth-token", "customer-auth-token"] // Garanta que os headers de token sejam permitidos
 }));
 app.use(express.json());
+app.use(mongoSanitizer); // Previne NoSQL injection
+app.use(sanitizeInput); // Sanitiza dados de entrada (XSS, etc.)
 app.use(require('cookie-parser')());
 
 // MongoDB Connection
