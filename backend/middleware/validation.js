@@ -27,12 +27,17 @@ const registerSchema = Joi.object({
     'string.email': 'Por favor, forneça um email válido.',
     'any.required': 'O campo email é obrigatório.'
   }),
-  password: Joi.string().min(6).required().messages({
-    'string.base': 'A senha deve ser um texto.',
-    'string.empty': 'A senha não pode estar vazia.',
-    'string.min': 'A senha deve ter no mínimo {#limit} caracteres.',
-    'any.required': 'O campo senha é obrigatório.'
-  }),
+  password: Joi.string()
+    .min(8)
+    .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]'))
+    .required()
+    .messages({
+      'string.base': 'A senha deve ser um texto.',
+      'string.empty': 'A senha não pode estar vazia.',
+      'string.min': 'A senha deve ter no mínimo 8 caracteres.',
+      'string.pattern.base': 'A senha deve conter pelo menos: 1 letra minúscula, 1 maiúscula, 1 número e 1 caractere especial (@$!%*?&)',
+      'any.required': 'O campo senha é obrigatório.'
+    }),
   userType: Joi.string().valid('admin', 'customer').required().messages({
     'string.base': 'O tipo de usuário deve ser um texto.',
     'string.empty': 'O tipo de usuário não pode estar vazio.',
