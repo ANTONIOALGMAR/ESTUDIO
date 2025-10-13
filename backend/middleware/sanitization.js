@@ -29,7 +29,11 @@ const sanitizeInput = (req, res, next) => {
   
   // Sanitiza params
   if (req.params && typeof req.params === 'object') {
-    req.params = sanitizeObject(req.params);
+    for (const key in req.params) {
+      if (Object.hasOwnProperty.call(req.params, key)) {
+        req.params[key] = sanitizeValue(req.params[key]);
+      }
+    }
   }
   
   next();
