@@ -20,7 +20,11 @@ const sanitizeInput = (req, res, next) => {
   
   // Sanitiza query parameters
   if (req.query && typeof req.query === 'object') {
-    req.query = sanitizeObject(req.query);
+    for (const key in req.query) {
+      if (Object.hasOwnProperty.call(req.query, key)) {
+        req.query[key] = sanitizeValue(req.query[key]);
+      }
+    }
   }
   
   // Sanitiza params
