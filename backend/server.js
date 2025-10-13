@@ -77,9 +77,14 @@ app.use(require('cookie-parser')());
 
 // MongoDB Connection
 const uri = process.env.MONGO_URI;
+console.log('Attempting to connect to MongoDB...');
 mongoose.connect(uri);
 
 const connection = mongoose.connection;
+connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err);
+});
+
 connection.once('open', () => {
   console.log("MongoDB database connection established successfully");
 });

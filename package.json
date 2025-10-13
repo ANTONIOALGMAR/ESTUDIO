@@ -58,7 +58,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "seed:services": "node backend/scripts/seedServices.js"
+    "seed:services": "node backend/scripts/seedServices.js",
+    "create:admin": "node backend/scripts/createAdmin.js"
   },
   "eslintConfig": {
     "extends": [

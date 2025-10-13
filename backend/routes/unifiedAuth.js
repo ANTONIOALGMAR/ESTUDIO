@@ -8,7 +8,12 @@ const { authLimiter, createResourceLimiter } = require('../middleware/rateLimite
 const { checkWeakPassword } = require('../middleware/passwordSecurity');
 const { securityLogger } = require('../utils/logger');
 
-const JWT_SECRET = require('../config/jwt');
+require('dotenv').config(); // Garante que as variáveis de ambiente sejam carregadas
+
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('FATAL ERROR: JWT_SECRET is not defined in environment variables.');
+}
 // É uma boa prática usar um segredo diferente para o refresh token.
 // Adicione REFRESH_TOKEN_SECRET ao seu arquivo .env
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'some-super-strong-secret-for-refresh-token';
@@ -56,8 +61,8 @@ router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
 
     res.cookie('jwt', refreshToken, {
       httpOnly: true,
-      secure: true, // Forçar cookie seguro em produção, já que o Render usa HTTPS
-      sameSite: 'None',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
     });
 

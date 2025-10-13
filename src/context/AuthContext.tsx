@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo } from 'react';
 import api, { setAuthToken, setupInterceptors } from '../api/api';
 
 // Interfaces
@@ -13,7 +13,7 @@ interface IAuthContext {
   user: IUser | null;
   isLoading: boolean;
   isInitialLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<IUser>;
   logout: () => void;
 }
 
@@ -25,55 +25,94 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
 
   const logout = useCallback(async () => {
+    console.log('[AuthContext] Logging out...');
     try {
       await api.post('/api/unified-auth/logout');
     } catch (error) {
-      console.error("Erro no logout do servidor, limpando o estado localmente.", error);
-    } finally {
+      console.error("[AuthContext] Server logout failed, clearing state locally.", error);
+    }
+    finally {
       setUser(null);
       setAuthToken(null);
     }
   }, []);
 
-  useEffect(() => {
-    // Configura os interceptors, passando a função de logout para eles.
-    // Isso permite que o módulo da API deslogue o usuário se o refresh token falhar.
-    setupInterceptors(logout);
+        useEffect(() => {
 
-    const verifyUser = async () => {
+          setupInterceptors(logout);
+
+      
+
+          const verifyUser = async () => {
+
+            try {
+
+              const response = await api.get('/api/unified-auth/refresh');
+
+              setUser(response.data.user);
+
+              setAuthToken(response.data.accessToken);
+
+            } catch (error) {
+
+              // console.log("Nenhuma sessão ativa encontrada.");
+
+            } finally {
+
+              setIsInitialLoading(false);
+
+            }
+
+          };
+
+      
+
+          verifyUser();
+
+        }, [logout]);
+
+    const login = useCallback(async (email: string, password: string) => {
+
+      setIsLoading(true);
+
       try {
-        const response = await api.get('/api/unified-auth/refresh');
+
+        const response = await api.post('/api/unified-auth/login', { email, password });
+
         const { accessToken, user } = response.data;
+
         setUser(user);
+
         setAuthToken(accessToken);
+
+        return user; // Retorna o usuário em caso de sucesso
+
       } catch (error) {
-        console.log("Nenhuma sessão ativa encontrada.");
+
+        setAuthToken(null);
+
+        throw error;
+
       } finally {
-        setIsInitialLoading(false);
+
+        setIsLoading(false);
+
       }
-    };
 
-    verifyUser();
-  }, [logout]);
+    }, []);
 
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const response = await api.post('/api/unified-auth/login', { email, password });
-      const { accessToken, user } = response.data;
-      setUser(user);
-      setAuthToken(accessToken);
-    } catch (error) {
-      setAuthToken(null);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const authContextValue = useMemo(() => ({
+    user,
+    isLoading,
+    isInitialLoading,
+    login,
+    logout,
+  }), [user, isLoading, isInitialLoading, login, logout]);
+
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isInitialLoading, login, logout }}>
-      {!isInitialLoading && children}
+    <AuthContext.Provider value={authContextValue}>
+      {children}
     </AuthContext.Provider>
   );
 };

@@ -33,7 +33,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
       const response = await fetch(`${apiUrl}/api/unified-auth/register`, {
         method: 'POST',

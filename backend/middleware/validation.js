@@ -29,12 +29,12 @@ const registerSchema = Joi.object({
   }),
   password: Joi.string()
     .min(8)
-    .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]'))
+    .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$'))
     .required()
     .messages({
       'string.base': 'A senha deve ser um texto.',
       'string.empty': 'A senha não pode estar vazia.',
-      'string.min': 'A senha deve ter no mínimo 8 caracteres.',
+      'string.min': 'A senha deve ter no mínimo {#limit} caracteres.',
       'string.pattern.base': 'A senha deve conter pelo menos: 1 letra minúscula, 1 maiúscula, 1 número e 1 caractere especial (@$!%*?&)',
       'any.required': 'O campo senha é obrigatório.'
     }),
