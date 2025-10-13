@@ -72,7 +72,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(mongoSanitizer); // Previne NoSQL injection
-app.use(sanitizeInput); // Sanitiza dados de entrada (XSS, etc.)
+// app.use(sanitizeInput); // Desabilitado para teste de bug
 app.use(require('cookie-parser')());
 
 // MongoDB Connection
