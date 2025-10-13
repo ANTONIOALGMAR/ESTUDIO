@@ -87,9 +87,6 @@ const sanitizeString = (str) => {
 // Middleware específico para MongoDB - previne NoSQL injection
 const mongoSanitizer = mongoSanitize({
   replaceWith: '_', // Substitui caracteres perigosos por _
-  onSanitize: ({ req, key }) => {
-    console.warn(`Tentativa de MongoDB injection detectada: ${key} na rota ${req.path}`);
-  },
 });
 
 // Middleware para validar tipos de dados esperados
