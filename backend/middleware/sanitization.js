@@ -15,7 +15,11 @@ const xssOptions = {
 const sanitizeInput = (req, res, next) => {
   // Sanitiza recursivamente todos os dados do body
   if (req.body && typeof req.body === 'object') {
-    req.body = sanitizeObject(req.body);
+    for (const key in req.body) {
+      if (Object.hasOwnProperty.call(req.body, key)) {
+        req.body[key] = sanitizeValue(req.body[key]);
+      }
+    }
   }
   
   // Sanitiza query parameters
