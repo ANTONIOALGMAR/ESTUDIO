@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { execSync } = require('child_process');
 
 const express = require('express');
 const createError = require('http-errors');
@@ -129,6 +130,13 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server
+try {
+  const commitHash = execSync('git rev-parse HEAD').toString().trim();
+  console.log(`[DEBUG] Starting server with commit: ${commitHash}`);
+} catch (e) {
+  console.log('[DEBUG] Could not get commit hash:', e.message);
+}
+
 app.listen(port, () => {
     console.log(`Server is running on port: ${port}`);
 });
