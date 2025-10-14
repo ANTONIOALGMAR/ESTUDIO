@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo } from 'react';
 import api, { setAuthToken, setupInterceptors } from '../api/api';
+import { CircularProgress, Box } from '@mui/material';
 
 // Interfaces
 interface IUser {
@@ -37,69 +38,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-        useEffect(() => {
+  useEffect(() => {
+    setupInterceptors(logout);
 
-          setupInterceptors(logout);
-
-      
-
-          const verifyUser = async () => {
-
-            try {
-
-              const response = await api.get('/api/unified-auth/refresh');
-
-              setUser(response.data.user);
-
-              setAuthToken(response.data.accessToken);
-
-            } catch (error) {
-
-              // console.log("Nenhuma sessão ativa encontrada.");
-
-            } finally {
-
-              setIsInitialLoading(false);
-
-            }
-
-          };
-
-      
-
-          verifyUser();
-
-        }, [logout]);
-
-    const login = useCallback(async (email: string, password: string) => {
-
-      setIsLoading(true);
-
+    const verifyUser = async () => {
       try {
-
-        const response = await api.post('/api/unified-auth/login', { email, password });
-
-        const { accessToken, user } = response.data;
-
-        setUser(user);
-
-        setAuthToken(accessToken);
-
-        return user; // Retorna o usuário em caso de sucesso
-
+        const response = await api.get('/api/unified-auth/refresh');
+        setUser(response.data.user);
+        setAuthToken(response.data.accessToken);
       } catch (error) {
-
-        setAuthToken(null);
-
-        throw error;
-
+        // console.log("Nenhuma sessão ativa encontrada.");
       } finally {
-
-        setIsLoading(false);
-
+        setIsInitialLoading(false);
       }
+    };
 
-    }, []);
+    verifyUser();
+  }, [logout]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const response = await api.post('/api/unified-auth/login', { email, password });
+      const { accessToken, user } = response.data;
+      setUser(user);
+      setAuthToken(accessToken);
+      return user; // Retorna o usuário em caso de sucesso
+    } catch (error) {
+      setAuthToken(null);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const authContextValue = useMemo(() => ({
     user,
@@ -109,6 +80,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     logout,
   }), [user, isLoading, isInitialLoading, login, logout]);
 
+  // Previne a renderização do app antes da verificação inicial de autenticação
+  if (isInitialLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <AuthContext.Provider value={authContextValue}>
