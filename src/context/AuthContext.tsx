@@ -7,6 +7,7 @@ interface IUser {
   id: string;
   fullName: string;
   email: string;
+  phone?: string;
   userType: 'admin' | 'customer';
 }
 
@@ -16,6 +17,7 @@ interface IAuthContext {
   isInitialLoading: boolean;
   login: (email: string, password: string) => Promise<IUser>;
   logout: () => void;
+  setAuthData: (accessToken: string, user: IUser) => void;
 }
 
 const AuthContext = createContext<IAuthContext | undefined>(undefined);
@@ -72,13 +74,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const setAuthData = useCallback((accessToken: string, user: IUser) => {
+    setUser(user);
+    setAuthToken(accessToken);
+  }, []);
+
   const authContextValue = useMemo(() => ({
     user,
     isLoading,
     isInitialLoading,
     login,
     logout,
-  }), [user, isLoading, isInitialLoading, login, logout]);
+    setAuthData,
+  }), [user, isLoading, isInitialLoading, login, logout, setAuthData]);
 
   // Previne a renderização do app antes da verificação inicial de autenticação
   if (isInitialLoading) {

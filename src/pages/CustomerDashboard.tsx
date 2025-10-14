@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Container, Table, Alert, Spinner, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import api from '../api/api'; // Importar a instância do axios
+import { useAuth } from '../context/AuthContext'; // Importar para verificar o loading inicial
 
 interface IBooking {
   _id: string;
@@ -20,68 +22,35 @@ const CustomerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAssociateButton, setShowAssociateButton] = useState(false);
+  const { isInitialLoading } = useAuth(); // Usar o estado de loading do contexto
   const navigate = useNavigate();
 
   const fetchCustomerBookings = useCallback(async () => {
-    const token = localStorage.getItem('customer-auth-token');
-    if (!token) {
-      setError("Sessão não encontrada. Por favor, faça login novamente.");
-      navigate('/customer/login');
-      return;
-    }
-
     try {
       setLoading(true);
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
-
-      const response = await fetch(`${apiUrl}/api/bookings/customer`, {
-        headers: {
-          'customer-auth-token': token,
-        },
-      });
-
-      if (!response.ok) {
-        // Se o token for inválido ou expirado, o servidor retornará 401 ou 403
-        localStorage.removeItem('customer-auth-token');
-        navigate('/customer/login');
-        return;
-      }
-
-      const data = await response.json();
-      setBookings(data);
+      const response = await api.get('/api/bookings/customer');
+      setBookings(response.data);
       // Mostra o botão se não houver agendamentos, permitindo ao usuário tentar vincular agendamentos antigos.
-      setShowAssociateButton(data.length === 0);
+      setShowAssociateButton(response.data.length === 0);
     } catch (err: any) {
-      setError(err.message || 'Falha ao carregar agendamentos. Verifique sua conexão com a internet.');
+      // O interceptador do axios já trata o logout. Apenas mostramos o erro.
+      setError(err.response?.data?.message || err.message || 'Falha ao carregar agendamentos.');
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
-    fetchCustomerBookings();
-  }, [fetchCustomerBookings]);
+    // Só busca os dados quando a verificação inicial de auth terminar
+    if (!isInitialLoading) {
+      fetchCustomerBookings();
+    }
+  }, [fetchCustomerBookings, isInitialLoading]);
 
   const handleAssociateBookings = async () => {
-    const token = localStorage.getItem('customer-auth-token');
-    if (!token) return;
-
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
-
-      const response = await fetch(`${apiUrl}/api/bookings/associate-customer`, {
-        method: 'POST',
-        headers: {
-          'customer-auth-token': token,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao associar agendamentos.');
-      }
-
-      const data = await response.json();
+      const response = await api.post('/api/bookings/associate-customer');
+      const data = response.data;
       // Atualiza o estado com a lista de agendamentos retornada pela API.
       if (data.bookings) {
         setBookings(data.bookings);
@@ -96,23 +65,8 @@ const CustomerDashboard = () => {
     if (!window.confirm('Tem certeza que deseja cancelar este agendamento?')) {
       return;
     }
-
-    const token = localStorage.getItem('customer-auth-token');
-    if (!token) return;
-
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
-      const response = await fetch(`${apiUrl}/api/bookings/${bookingId}/cancel`, {
-        method: 'PUT',
-        headers: {
-          'customer-auth-token': token,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao cancelar agendamento.');
-      }
-
+      await api.put(`/api/bookings/${bookingId}/cancel`);
       // Re-busca os agendamentos para atualizar a lista
       fetchCustomerBookings();
 
@@ -125,17 +79,22 @@ const CustomerDashboard = () => {
     navigate('/booking', { state: { bookingToReschedule: booking } });
   };
 
-  if (loading) {
+  // Mostra um loader unificado enquanto o AuthContext verifica o token ou os dados estão carregando
+  if (isInitialLoading || loading) {
     return (
       <Container className="text-center mt-5">
         <Spinner animation="border" variant="warning" />
-        <p>Carregando seus agendamentos...</p>
+        <p>{isInitialLoading ? 'Verificando acesso...' : 'Carregando seus agendamentos...'}</p>
       </Container>
     );
   }
 
-  if (error) {
+  if (error && !isInitialLoading) {
     return (
+      // Adicionamos uma verificação para não mostrar o erro se o componente já estiver carregando
+      // Isso evita que um erro de uma chamada anterior pisque na tela durante um novo carregamento.
+      // O erro só será exibido se o carregamento tiver terminado.
+      !loading &&
       <Container className="text-center mt-5">
         <Alert variant="danger">{error}</Alert>
       </Container>

@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Container, Box, Typography, Grid, TextField, FormControl, FormLabel, FormGroup, FormControlLabel, Checkbox, Button, Alert, CircularProgress } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useNavigate, useLocation } from 'react-router-dom';
-import dayjs, { Dayjs } from 'dayjs';
+import { useAuth } from '../context/AuthContext';
+import api from '../api/api';
+import { Dayjs } from 'dayjs';
 
 const ALL_SERVICES = [
   'Lavagem Basica',
@@ -45,6 +47,7 @@ const Booking = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, setAuthData } = useAuth();
 
   // Effect to pre-fill form for rescheduling
   useEffect(() => {
@@ -61,19 +64,13 @@ const Booking = () => {
       setDate(null);
     } else {
       // Preenche com dados do usuário logado se não for remarcação
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        try {
-          const user = JSON.parse(userData);
-          setFullName(user.fullName || '');
-          setEmail(user.email || '');
-          setPhone(user.phone || '');
-        } catch (error) {
-          console.error("Erro ao parsear dados do usuário:", error);
-        }
+      if (user) {
+        setFullName(user.fullName || '');
+        setEmail(user.email || '');
+        setPhone(user.phone || '');
       }
     }
-  }, [location.state]);
+  }, [location.state, user]);
 
   const handleServiceChange = (serviceName: string) => {
     setServices(prevServices => 
@@ -120,24 +117,13 @@ const Booking = () => {
 
     // --- RESCHEDULE LOGIC ---
     if (rescheduleId) {
-      const token = localStorage.getItem('customer-auth-token');
-      if (!token) {
-        setFeedback({ type: 'error', message: 'Sessão expirada. Faça login novamente.' });
-        setLoading(false);
-        return;
-      }
-
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bookings/${rescheduleId}/reschedule`, {
-          method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/json',
-            'customer-auth-token': token
-          },
-          body: JSON.stringify({ date: date.format('YYYY-MM-DD') }),
+        const response = await api.put(`/api/bookings/${rescheduleId}/reschedule`, {
+          date: date.format('YYYY-MM-DD'),
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Falha ao remarcar agendamento.');
+
+        const data = response.data;
+        if (response.status !== 200) throw new Error(data.message || 'Falha ao remarcar agendamento.');
 
         setFeedback({ type: 'success', message: 'Agendamento remarcado com sucesso!' });
         setTimeout(() => navigate('/customer/dashboard'), 2000);
@@ -172,19 +158,15 @@ const Booking = () => {
     if (createAccount) bookingData.password = password;
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/bookings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingData),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Falha ao enviar agendamento.');
+      const response = await api.post('/api/bookings', bookingData);
+      const data = response.data;
+      if (response.status !== 201) throw new Error(data.message || 'Falha ao enviar agendamento.');
 
       setFeedback({ type: 'success', message: 'Agendamento confirmado com sucesso! Entraremos em contato em breve.' });
       resetForm();
 
       if (data.customerToken) {
-        localStorage.setItem('customer-auth-token', data.customerToken);
+        setAuthData(data.customerToken, data.user);
         setTimeout(() => navigate('/customer/dashboard'), 2000);
       }
     } catch (error: any) {

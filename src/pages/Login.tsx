@@ -24,14 +24,15 @@ const Login = () => {
   const { login, isLoading, user, isInitialLoading } = useAuth();
 
   useEffect(() => {
-    if (user) {
+    // Apenas redireciona se a verificação inicial terminou E existe um usuário
+    if (!isInitialLoading && user) {
       if (user.userType === 'admin') {
         navigate('/admin/dashboard', { replace: true });
       } else if (user.userType === 'customer') {
         navigate('/customer/dashboard', { replace: true });
       }
     }
-  }, [user, navigate]);
+  }, [user, isInitialLoading, navigate]);
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -49,14 +50,15 @@ const Login = () => {
     }
   };
 
-  if (isInitialLoading) {
+  // Mostra o loader se a verificação inicial estiver ocorrendo OU se já houver um usuário
+  // (o que significa que estamos prestes a ser redirecionados).
+  if (isInitialLoading || user) {
     return (
       <Container component="main" maxWidth="xs" sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
         <CircularProgress />
       </Container>
     );
   }
-
   return (
     <Container component="main" maxWidth="xs">
       <Box

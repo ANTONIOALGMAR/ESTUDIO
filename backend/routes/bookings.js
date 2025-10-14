@@ -116,10 +116,10 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Rota para buscar todos os agendamentos (Protegida)
-router.get('/', verifyToken, async (req, res) => {
+// Rota de ADMIN para buscar todos os agendamentos (Protegida por Admin)
+router.get('/all', verifyAdmin, async (req, res) => {
   try {
-    const bookings = await Booking.find().sort({ createdAt: -1 }); // Ordena do mais recente para o mais antigo
+    const bookings = await Booking.find().sort({ date: -1 }); // Ordena pela data do serviço
     res.json(bookings);
   } catch (error) {
     res.status(500).json({ message: 'Erro ao buscar agendamentos.' });

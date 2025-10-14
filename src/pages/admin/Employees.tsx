@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Button, Typography, Alert, CircularProgress } from '@mui/material';
+import { Box, Button, Typography, Alert } from '@mui/material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import UserFormModal, { IUser } from '../../components/UserFormModal';
+import api from '../../api/api'; // Importar a instância do axios
+import { useAuth } from '../../context/AuthContext'; // Importar para verificar o loading inicial
 
 const AdminEmployees = () => {
   const [users, setUsers] = useState<IUser[]>([]);
@@ -9,34 +11,29 @@ const AdminEmployees = () => {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<IUser | null>(null);
+  const { isInitialLoading } = useAuth(); // Usar o estado de loading do contexto
 
   const fetchUsers = useCallback(async () => {
-    const token = localStorage.getItem('auth-token');
-    if (!token) {
-      setError("Token não encontrado. Faça login novamente.");
-      setLoading(false);
-      return;
-    }
     try {
       setLoading(true);
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
-      const response = await fetch(`${apiUrl}/api/users`, { headers: { 'auth-token': token } });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao buscar usuários.');
-      }
-      const data = await response.json();
-      setUsers(data);
+      // Usar a instância do 'api' que já tem o token configurado
+      const response = await api.get('/api/users');
+      setUsers(response.data);
     } catch (err: any) {
-      setError(err.message);
+      // O interceptador do axios já trata o logout em caso de token inválido.
+      // Aqui, apenas mostramos o erro para o usuário.
+      setError(err.response?.data?.message || err.message || 'Falha ao buscar usuários.');
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    // Só busca os dados quando a verificação inicial de autenticação terminar
+    if (!isInitialLoading) {
+      fetchUsers();
+    }
+  }, [fetchUsers, isInitialLoading]);
 
   const handleOpenModal = (user: IUser | null) => {
     setEditingUser(user);
@@ -49,21 +46,14 @@ const AdminEmployees = () => {
   };
 
   const handleSaveUser = async (userData: IUser) => {
-    const token = localStorage.getItem('auth-token');
     const method = userData._id ? 'PUT' : 'POST';
-    const url = userData._id
-      ? `${process.env.REACT_APP_API_URL}/api/users/${userData._id}`
-      : `${process.env.REACT_APP_API_URL}/api/users`;
+    const url = userData._id ? `/api/users/${userData._id}` : '/api/users';
     try {
-      const response = await fetch(url, {
+      await api.request({
+        url: url,
         method: method,
-        headers: { 'Content-Type': 'application/json', 'auth-token': token! },
-        body: JSON.stringify(userData),
+        data: userData,
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao salvar usuário.');
-      }
       handleCloseModal();
       fetchUsers();
     } catch (err: any) {
@@ -73,18 +63,12 @@ const AdminEmployees = () => {
 
   const handleDeleteUser = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este usuário?')) {
-      const token = localStorage.getItem('auth-token');
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${id}`, {
-          method: 'DELETE',
-          headers: { 'auth-token': token! },
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Falha ao excluir usuário.');
-        }
+        await api.delete(`/api/users/${id}`);
         fetchUsers();
-      } catch (err: any) { setError(err.message); }
+      } catch (err: any) { 
+        setError(err.response?.data?.message || err.message || 'Falha ao excluir usuário.');
+      }
     }
   };
 
@@ -121,6 +105,13 @@ const AdminEmployees = () => {
     },
   ];
 
+  // Mostra um loader centralizado enquanto o AuthContext verifica o token
+  if (isInitialLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><Typography>Verificando acesso...</Typography></Box>
+    );
+  }
+
   return (
     <Box sx={{ p: 3, width: '100%' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -130,7 +121,7 @@ const AdminEmployees = () => {
         </Button>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && !loading && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <Box sx={{ height: 650, width: '100%' }}>
         <DataGrid

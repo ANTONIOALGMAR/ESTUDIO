@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Container, Table, Alert, Spinner, Button, Form, Row, Col, Card } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
 import BookingEditModal from '../components/BookingEditModal';
 import useMediaQuery from '../hooks/useMediaQuery';
+import { useAuth } from '../context/AuthContext'; // Importar o AuthContext
+import api from '../api/api'; // Importar a instância do axios
 
 // Interfaces
 interface IBooking {
@@ -50,49 +51,44 @@ const Dashboard = () => {
   const [summary, setSummary] = useState<ISummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<IBooking | null>(null);
+  const { isInitialLoading } = useAuth(); // Usar o estado de loading do contexto
 
   const fetchData = useCallback(async () => {
-    const token = localStorage.getItem('auth-token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-
     setLoading(true);
+    setError('');
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
-      
       // Busca dados dos agendamentos e do resumo em paralelo
       const [bookingsResponse, summaryResponse] = await Promise.all([
-        fetch(`${apiUrl}/api/bookings`, { headers: { 'auth-token': token } }),
-        fetch(`${apiUrl}/api/analytics/summary`, { headers: { 'auth-token': token } })
+        api.get('/api/bookings/all'),
+        api.get('/api/analytics/summary')
       ]);
 
       // Trata a resposta dos agendamentos
-      if (!bookingsResponse.ok) throw new Error('Falha ao buscar agendamentos.');
-      const bookingsData = await bookingsResponse.json();
+      const bookingsData = bookingsResponse.data;
       setBookings(bookingsData);
       setFilteredBookings(bookingsData);
 
       // Trata a resposta do resumo
-      if (!summaryResponse.ok) throw new Error('Falha ao buscar resumo de analytics.');
-      const summaryData = await summaryResponse.json();
+      const summaryData = summaryResponse.data;
       setSummary(summaryData);
 
     } catch (err: any) {
-      setError(err.message);
+      // O interceptador do axios já trata o logout. Apenas mostramos o erro.
+      setError(err.response?.data?.message || err.message || 'Falha ao carregar dados do painel.');
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    // Só busca os dados quando a verificação inicial de auth terminar
+    if (!isInitialLoading) {
+      fetchData();
+    }
+  }, [fetchData, isInitialLoading]);
 
   // Efeito para filtrar os agendamentos
   useEffect(() => {
@@ -108,34 +104,23 @@ const Dashboard = () => {
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este agendamento?')) {
-      const token = localStorage.getItem('auth-token');
       try {
-        const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
-        const response = await fetch(`${apiUrl}/api/bookings/${id}`, {
-          method: 'DELETE',
-          headers: { 'auth-token': token! },
-        });
-        if (!response.ok) throw new Error('Falha ao excluir agendamento.');
+        await api.delete(`/api/bookings/${id}`);
         fetchData(); // Re-busca todos os dados para atualizar o dashboard
       } catch (err: any) {
-        setError(err.message);
+        setError(err.response?.data?.message || err.message || 'Falha ao excluir agendamento.');
       }
     }
   };
 
   const handleStatusChange = async (id: string, newStatus: string) => {
-    const token = localStorage.getItem('auth-token');
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
-      const response = await fetch(`${apiUrl}/api/bookings/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'auth-token': token! },
-        body: JSON.stringify({ status: newStatus }),
+      await api.put(`/api/bookings/${id}`, {
+        status: newStatus
       });
-      if (!response.ok) throw new Error('Falha ao atualizar status.');
       fetchData(); // Re-busca todos os dados para atualizar o dashboard
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Falha ao atualizar status.');
     }
   };
 
@@ -150,19 +135,20 @@ const Dashboard = () => {
   };
   const handleModalSave = () => {
     fetchData(); // Re-busca todos os dados após salvar
-  };
+  };;
 
-  if (loading) {
+  // Mostra um loader unificado enquanto o AuthContext verifica o token ou os dados estão carregando
+  if (isInitialLoading || loading) {
     return (
       <Container className="text-center mt-5">
         <Spinner animation="border" variant="warning" />
-        <p>Carregando dados do dashboard...</p>
+        <p>{isInitialLoading ? 'Verificando acesso...' : 'Carregando dados do painel...'}</p>
       </Container>
     );
   }
 
-  if (error) {
-    return <Alert variant="danger">{error}</Alert>;
+  if (error && !loading) {
+    return <Alert variant="danger" className="m-3">{error}</Alert>;
   }
 
   return (
@@ -246,6 +232,16 @@ const Dashboard = () => {
                           {STATUS_OPTIONS.map(status => (<option key={status} value={status}>{status}</option>))}
                         </Form.Select>
                         <div>
+                          {booking.status === 'aguardando' && (
+                            <Button
+                              variant="outline-success"
+                              size="sm"
+                              className="me-2"
+                              onClick={() => handleStatusChange(booking._id, 'em andamento')}
+                            >
+                              Aceitar
+                            </Button>
+                          )}
                           <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleEditClick(booking)}>Editar</Button>
                           <Button variant="outline-danger" size="sm" onClick={() => { if (booking._id) { handleDelete(booking._id); } }} disabled={!booking._id}>Excluir</Button>
                         </div>
@@ -283,6 +279,16 @@ const Dashboard = () => {
                         </Form.Select>
                       </td>
                       <td>
+                        {booking.status === 'aguardando' && (
+                          <Button
+                            variant="outline-success"
+                            size="sm"
+                            className="me-2"
+                            onClick={() => handleStatusChange(booking._id, 'em andamento')}
+                          >
+                            Aceitar
+                          </Button>
+                        )}
                         <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleEditClick(booking)}>Editar</Button>
                         <Button variant="outline-danger" size="sm" onClick={() => { if (booking._id) { handleDelete(booking._id); } }} disabled={!booking._id}>Excluir</Button>
                       </td>
