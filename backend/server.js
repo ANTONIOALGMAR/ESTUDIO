@@ -72,7 +72,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization", "auth-token", "customer-auth-token"] // Garanta que os headers de token sejam permitidos
 }));
 app.use(express.json());
-app.use(mongoSanitizer); // Previne NoSQL injection
+// app.use(mongoSanitizer); // Previne NoSQL injection
 
 app.use(require('cookie-parser')());
 
