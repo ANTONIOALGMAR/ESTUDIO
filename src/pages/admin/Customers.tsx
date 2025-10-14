@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Alert } from '@mui/material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { useNavigate } from 'react-router-dom';
-import api from '../../api/api'; // Importando nossa instância do Axios
+import api from '../../api/api';
+import { useAuth } from '../../context/AuthContext'; // Importa o useAuth
 
 interface Customer {
   _id: string;
@@ -16,12 +17,12 @@ const Customers = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { isInitialLoading } = useAuth(); // Usa o hook de autenticação
 
   useEffect(() => {
     const fetchCustomers = async () => {
+      setLoading(true);
       try {
-        // A chamada agora é muito mais simples!
-        // O token é adicionado automaticamente pelo interceptor.
         const response = await api.get('/api/customers');
         setCustomers(response.data);
       } catch (err: any) {
@@ -31,8 +32,11 @@ const Customers = () => {
       }
     };
 
-    fetchCustomers();
-  }, []);
+    // Só busca os dados quando a verificação inicial de auth terminar
+    if (!isInitialLoading) {
+      fetchCustomers();
+    }
+  }, [isInitialLoading]); // O efeito agora depende de isInitialLoading
 
   const columns: GridColDef[] = [
     { field: 'fullName', headerName: 'Nome Completo', flex: 1 },
@@ -55,7 +59,8 @@ const Customers = () => {
     },
   ];
 
-  if (loading) {
+  // Mostra o loading do componente OU o loading inicial da aplicação
+  if (loading || isInitialLoading) {
     return <Typography>Carregando clientes...</Typography>;
   }
 

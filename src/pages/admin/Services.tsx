@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Button, Table, Spinner, Alert } from 'react-bootstrap';
 import ServiceFormModal, { IService } from '../../components/ServiceFormModal';
-import api from '../../api/api'; // Importando nossa instância do Axios
+import api from '../../api/api';
+import { useAuth } from '../../context/AuthContext'; // Importa o useAuth
 
 const AdminServices = () => {
   const [services, setServices] = useState<IService[]>([]);
@@ -10,6 +11,7 @@ const AdminServices = () => {
 
   const [showModal, setShowModal] = useState(false);
   const [editingService, setEditingService] = useState<IService | null>(null);
+  const { isInitialLoading } = useAuth(); // Usa o hook de autenticação
 
   const fetchServices = useCallback(async () => {
     try {
@@ -24,8 +26,11 @@ const AdminServices = () => {
   }, []);
 
   useEffect(() => {
-    fetchServices();
-  }, [fetchServices]);
+    // Só busca os dados quando a verificação inicial de auth terminar
+    if (!isInitialLoading) {
+      fetchServices();
+    }
+  }, [isInitialLoading, fetchServices]); // O efeito agora depende de isInitialLoading
 
   const handleOpenModal = (service: IService | null) => {
     setEditingService(service);
@@ -64,6 +69,16 @@ const AdminServices = () => {
     }
   };
 
+  // Mostra o loading do componente OU o loading inicial da aplicação
+  if (loading || isInitialLoading) {
+    return (
+      <div className="text-center">
+        <Spinner animation="border" variant="primary" />
+        <p>Carregando serviços...</p>
+      </div>
+    );
+  }
+
   return (
     <Container fluid>
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -72,13 +87,6 @@ const AdminServices = () => {
           Adicionar Novo Serviço
         </Button>
       </div>
-
-      {loading && (
-        <div className="text-center">
-          <Spinner animation="border" variant="primary" />
-          <p>Carregando serviços...</p>
-        </div>
-      )}
 
       {error && <Alert variant="danger">{error}</Alert>}
 
