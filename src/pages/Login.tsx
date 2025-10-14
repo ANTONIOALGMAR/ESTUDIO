@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Container, 
   Box, 
@@ -18,11 +18,20 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loginSuccess, setLoginSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
   const navigate = useNavigate();
   const { login, isLoading, user, isInitialLoading } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      if (user.userType === 'admin') {
+        navigate('/admin/dashboard', { replace: true });
+      } else if (user.userType === 'customer') {
+        navigate('/customer/dashboard', { replace: true });
+      }
+    }
+  }, [user, navigate]);
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -35,19 +44,11 @@ const Login = () => {
 
     try {
       await login(email, password);
-      setLoginSuccess(true);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Ocorreu um erro desconhecido.');
     }
   };
 
-  if (loginSuccess) {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-
-
-
-  // Mostra um spinner enquanto a sessão inicial está sendo verificada
   if (isInitialLoading) {
     return (
       <Container component="main" maxWidth="xs" sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -55,7 +56,6 @@ const Login = () => {
       </Container>
     );
   }
-
 
   return (
     <Container component="main" maxWidth="xs">
