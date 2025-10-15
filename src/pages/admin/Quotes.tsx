@@ -3,6 +3,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Box, Typography, Button, Alert } from '@mui/material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import QuoteFormModal from '../../components/QuoteFormModal'; // Importa o modal
+import { useAuth } from '../../context/AuthContext';
+import api from '../../api/api';
 
 // Interface para o Orçamento (deve corresponder ao modelo do backend)
 interface IQuote {
@@ -22,21 +24,20 @@ const Quotes = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar o modal
+  const { user, isInitialLoading } = useAuth();
 
   const fetchQuotes = useCallback(async () => {
-    const token = localStorage.getItem('auth-token');
-    if (!token) {
-      setError("Token de administrador não encontrado. Faça login novamente.");
+    if (isInitialLoading) return; // Não faz nada enquanto o AuthContext está carregando
+
+    if (!user || user.userType !== 'admin') {
+      setError("Acesso negado. Apenas administradores podem visualizar orçamentos.");
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
-      const response = await fetch(`${apiUrl}/api/quotes`, { 
-        headers: { 'auth-token': token }
-      });
+      const response = await api.get('/api/quotes');
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -57,17 +58,12 @@ const Quotes = () => {
   }, [fetchQuotes]);
 
   const handleSaveQuote = async (quoteData: any) => {
-    const token = localStorage.getItem('auth-token');
+    if (!user || user.userType !== 'admin') {
+      setError("Acesso negado. Apenas administradores podem criar orçamentos.");
+      return;
+    }
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
-      const response = await fetch(`${apiUrl}/api/quotes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'auth-token': token!
-        },
-        body: JSON.stringify(quoteData),
-      });
+      const response = await api.post('/api/quotes', quoteData);
 
       if (!response.ok) {
         const errorData = await response.json();
