@@ -7,9 +7,10 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const helmet = require('helmet'); // Importa o Helmet
 const { globalLimiter } = require('./middleware/rateLimiter'); // Importa rate limiting
-const { mongoSanitizer, sanitizeInput } = require('./middleware/sanitization'); // Importa sanitização
+
 const { forceHTTPS, securityHeaders, blockMaliciousBots } = require('./middleware/httpsRedirect'); // Importa segurança HTTPS
 const { requestLogger, logger } = require('./utils/logger'); // Importa sistema de logging
+const { sanitizeAll } = require('./middleware/sanitizer'); // Importa o novo sanitizador global
 
 // Initialize Express app
 const app = express();
@@ -72,7 +73,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization", "auth-token", "customer-auth-token"] // Garanta que os headers de token sejam permitidos
 }));
 app.use(express.json());
-// app.use(mongoSanitizer); // Previne NoSQL injection
+app.use(sanitizeAll); // Sanitiza todos os inputs contra XSS
 
 app.use(require('cookie-parser')());
 
