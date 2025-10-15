@@ -58,8 +58,6 @@ const Quotes = () => {
     try {
       const response = await api.post('/api/quotes', quoteData);
 
-      // Axios lança um erro para status != 2xx, então não precisamos de response.ok
-      // Se chegou aqui, a requisição foi bem-sucedida (status 2xx)
       setIsModalOpen(false); // Fecha o modal
       fetchQuotes(); // Atualiza a lista de orçamentos
 
