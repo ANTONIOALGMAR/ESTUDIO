@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Card, Table, Spinner, Alert, Row, Col } from 'react-bootstrap';
 import { useParams, Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../api/api';
 
 // Interfaces
 interface IBooking {
@@ -29,35 +31,27 @@ const CustomerDetails = () => {
   const [details, setDetails] = useState<ICustomerDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { user, isInitialLoading } = useAuth();
 
   const fetchCustomerDetails = useCallback(async () => {
-    const token = localStorage.getItem('auth-token');
-    if (!id || !token) {
-      setError("ID do cliente ou token não encontrado.");
+    if (isInitialLoading) return; // Não faz nada enquanto o AuthContext está carregando
+
+    if (!id || !user || user.userType !== 'admin') {
+      setError("Acesso negado. ID do cliente ou privilégios de administrador não encontrados.");
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
-      const response = await fetch(`${apiUrl}/api/customers/${id}`, {
-        headers: { 'auth-token': token },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao buscar detalhes do cliente.');
-      }
-
-      const data = await response.json();
-      setDetails(data);
+      const response = await api.get(`/api/customers/${id}`);
+      setDetails(response.data);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Erro ao buscar detalhes do cliente.');
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, user, isInitialLoading]);
 
   useEffect(() => {
     fetchCustomerDetails();
