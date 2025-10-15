@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
@@ -13,20 +13,13 @@ import {
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import logo from '../assets/images/logo2.png';
+import { useAuth } from '../context/AuthContext';
 
 const Header = () => {
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [isCustomerAuthenticated, setIsCustomerAuthenticated] = useState(false);
   const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    const adminToken = localStorage.getItem('auth-token');
-    const customerToken = localStorage.getItem('customer-auth-token');
-    setIsAdminAuthenticated(!!adminToken);
-    setIsCustomerAuthenticated(!!customerToken);
-  }, [location]);
+  const { user, logout, isInitialLoading } = useAuth();
 
   const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
@@ -36,12 +29,8 @@ const Header = () => {
     setAnchorElNav(null);
   };
 
-  const handleLogout = (userType: 'admin' | 'customer') => {
-    const tokenKey = userType === 'admin' ? 'auth-token' : 'customer-auth-token';
-    localStorage.removeItem(tokenKey);
-    localStorage.removeItem('user'); // Limpa também os dados do usuário
-    setIsAdminAuthenticated(false);
-    setIsCustomerAuthenticated(false);
+  const handleLogout = () => {
+    logout(); // Chama a função de logout do AuthContext
     handleCloseNavMenu();
     navigate('/');
   };
@@ -56,9 +45,9 @@ const Header = () => {
   const renderNavLinks = (isMobile: boolean) => {
     const links = [...commonPages];
 
-    if (isAdminAuthenticated) {
+    if (user && user.userType === 'admin') {
       links.push({ name: 'Painel Admin', path: '/dashboard' });
-    } else if (isCustomerAuthenticated) {
+    } else if (user && user.userType === 'customer') {
       links.push({ name: 'Painel Cliente', path: '/customer/dashboard' });
     }
 
@@ -75,18 +64,22 @@ const Header = () => {
   };
 
   const renderAuthButtons = (isMobile: boolean) => {
-    if (isAdminAuthenticated) {
+    if (isInitialLoading) {
+      return null; // Não renderiza nada enquanto o estado inicial está carregando
+    }
+
+    if (user && user.userType === 'admin') {
       if (isMobile) {
-        return <MenuItem onClick={() => { handleLogout('admin'); handleCloseNavMenu(); }} sx={{ color: 'yellow' }}>Sair Admin</MenuItem>;
+        return <MenuItem onClick={() => { handleLogout(); handleCloseNavMenu(); }} sx={{ color: 'yellow' }}>Sair Admin</MenuItem>;
       }
-      return <Button onClick={() => handleLogout('admin')} sx={{ color: 'yellow' }}>Sair Admin</Button>;
+      return <Button onClick={handleLogout} sx={{ color: 'yellow' }}>Sair Admin</Button>;
     }
     
-    if (isCustomerAuthenticated) {
+    if (user && user.userType === 'customer') {
       if (isMobile) {
-        return <MenuItem onClick={() => { handleLogout('customer'); handleCloseNavMenu(); }} sx={{ color: 'yellow' }}>Sair Cliente</MenuItem>;
+        return <MenuItem onClick={() => { handleLogout(); handleCloseNavMenu(); }} sx={{ color: 'yellow' }}>Sair Cliente</MenuItem>;
       }
-      return <Button onClick={() => handleLogout('customer')} sx={{ color: 'yellow' }}>Sair Cliente</Button>;
+      return <Button onClick={handleLogout} sx={{ color: 'yellow' }}>Sair Cliente</Button>;
     }
 
     // Not authenticated
