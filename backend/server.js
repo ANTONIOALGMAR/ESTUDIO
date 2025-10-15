@@ -81,6 +81,7 @@ app.use(require('cookie-parser')());
 const uri = process.env.MONGO_URI;
 console.log('Attempting to connect to MongoDB...');
 mongoose.connect(uri);
+mongoose.set('sanitizeFilter', true);
 
 const connection = mongoose.connection;
 connection.on('error', (err) => {
