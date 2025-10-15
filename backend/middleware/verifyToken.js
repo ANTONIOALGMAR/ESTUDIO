@@ -20,8 +20,8 @@ module.exports = function (req, res, next) {
     // Verifica o token e extrai o payload. O payload deve conter { id, userType }
     const verified = jwt.verify(token, JWT_SECRET);
 
-    // Anexa o payload decodificado (que contém id, isAdmin, isCustomer) ao objeto req
-    req.user = verified;
+    // Anexa o payload decodificado (que contém id, userType) ao objeto req
+    req.user = { ...verified, isAdmin: verified.userType === 'admin' };
 
     next(); // Continua para a próxima etapa
   } catch (err) {
