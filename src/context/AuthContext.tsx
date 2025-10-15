@@ -50,6 +50,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setAuthToken(response.data.accessToken);
       } catch (error) {
         // console.log("Nenhuma sessão ativa encontrada.");
+        // Se o refresh falhar, o usuário não está autenticado.
+        // Precisamos garantir que o estado 'user' seja limpo aqui.
+        setUser(null);
+        setAuthToken(null);
       } finally {
         setIsInitialLoading(false);
       }
