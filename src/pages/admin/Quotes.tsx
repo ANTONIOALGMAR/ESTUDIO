@@ -38,14 +38,7 @@ const Quotes = () => {
     try {
       setLoading(true);
       const response = await api.get('/api/quotes');
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao buscar orçamentos.');
-      }
-
-      const data = await response.json();
-      setQuotes(data);
+      setQuotes(response.data);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -65,11 +58,8 @@ const Quotes = () => {
     try {
       const response = await api.post('/api/quotes', quoteData);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao salvar orçamento.');
-      }
-
+      // Axios lança um erro para status != 2xx, então não precisamos de response.ok
+      // Se chegou aqui, a requisição foi bem-sucedida (status 2xx)
       setIsModalOpen(false); // Fecha o modal
       fetchQuotes(); // Atualiza a lista de orçamentos
 
