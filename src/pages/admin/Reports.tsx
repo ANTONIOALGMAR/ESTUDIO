@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Form, Button, Row, Col, Table, Spinner, Alert, Card } from 'react-bootstrap';
+import api from '../../api/api'; // Importa a instância do Axios
 
 // Re-using interfaces
 interface IBooking {
@@ -26,33 +27,19 @@ const AdminReports = () => {
   const [endDate, setEndDate] = useState('');
   const [status, setStatus] = useState('all');
   const [filteredBookings, setFilteredBookings] = useState<IBooking[]>([]);
-  const [loading, setLoading] = useState(false); // Start as false, load on filter
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [totalRevenue, setTotalRevenue] = useState(0);
-  const [services, setServices] = useState<IService[]>([]); // To get service prices
+  const [services, setServices] = useState<IService[]>([]);
 
   const STATUS_OPTIONS = ['all', 'aguardando', 'em andamento', 'pronto', 'entregue'];
 
-  // Fetch all services to map names to prices for revenue calculation
   const fetchAllServices = useCallback(async () => {
-    const token = localStorage.getItem('auth-token');
-    if (!token) {
-      setError("Token não encontrado. Faça login novamente.");
-      return;
-    }
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
-      const response = await fetch(`${apiUrl}/api/services/all`, {
-        headers: { 'auth-token': token },
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao buscar lista de serviços.');
-      }
-      const data = await response.json();
-      setServices(data);
+      const response = await api.get('/api/services/all');
+      setServices(response.data);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.message || 'Falha ao buscar lista de serviços.');
     }
   }, []);
 
@@ -75,36 +62,20 @@ const AdminReports = () => {
   }, [services]);
 
   const fetchFilteredBookings = useCallback(async () => {
-    const token = localStorage.getItem('auth-token');
-    if (!token) {
-      setError("Token não encontrado. Faça login novamente.");
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     setError('');
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
-      let queryParams = new URLSearchParams();
-      if (startDate) queryParams.append('startDate', startDate);
-      if (endDate) queryParams.append('endDate', endDate);
-      if (status !== 'all') queryParams.append('status', status);
-
-      const response = await fetch(`${apiUrl}/api/bookings/filtered?${queryParams.toString()}`, {
-        headers: { 'auth-token': token },
+      const response = await api.get('/api/bookings/filtered', {
+        params: {
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+          status: status === 'all' ? undefined : status,
+        },
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao buscar agendamentos filtrados.');
-      }
-
-      const data = await response.json();
-      setFilteredBookings(data);
-      setTotalRevenue(calculateRevenue(data)); // Calculate revenue for filtered data
+      setFilteredBookings(response.data);
+      setTotalRevenue(calculateRevenue(response.data));
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.message || 'Falha ao buscar agendamentos filtrados.');
     } finally {
       setLoading(false);
     }
