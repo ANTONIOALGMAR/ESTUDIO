@@ -32,6 +32,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ show, onHide, onSave, use
   useEffect(() => {
     if (user) {
       setFormData({
+        _id: user._id, // Garante que o ID seja mantido para a atualização
         fullName: user.fullName,
         email: user.email,
         role: user.role,
