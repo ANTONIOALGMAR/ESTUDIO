@@ -57,7 +57,7 @@ const AdminEmployees = () => {
       handleCloseModal();
       fetchUsers();
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Ocorreu um erro desconhecido ao salvar o usuário.');
     }
   };
 
