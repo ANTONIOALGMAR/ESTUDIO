@@ -62,45 +62,60 @@ router.post('/', createResourceLimiter, verifyAdmin, checkWeakPassword, async (r
 // ROTA DE ADMIN - Atualizar um usuário
 router.put('/:id', verifyAdmin, async (req, res) => {
   try {
-    const userId = req.params.id; // ID do usuário que está sendo atualizado
+    const userId = req.params.id;
     const { fullName, email, password, role } = req.body;
-    const updateFields = { fullName, email, role };
 
-    // Obter o usuário atual para comparar o email
+    // Obter o usuário atual do banco de dados
     const currentUser = await User.findById(userId);
     if (!currentUser) {
       return res.status(404).json({ message: 'Usuário não encontrado.' });
     }
 
-    // 1. Verifica se o email já existe para OUTRO usuário
-    // Só verifica se o email foi fornecido no body E se é diferente do email atual do usuário
+    // Inicializa os campos a serem atualizados
+    const updateFields = {
+      fullName: fullName || currentUser.fullName,
+      role: role || currentUser.role,
+    };
+
+    // 1. Lógica de atualização de email
+    // Verifica se o email foi enviado e se é diferente do email atual
     if (email && email !== currentUser.email) {
-      const existingUser = await User.findOne({ email });
-      if (existingUser) { // Se encontrou outro usuário com o mesmo email
-        return res.status(400).json({ message: 'Email já cadastrado.' });
+      // Verifica se o novo email já está em uso por outro usuário
+      const existingUser = await User.findOne({ email: email, _id: { $ne: userId } });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email já cadastrado para outro usuário.' });
       }
+      updateFields.email = email; // Adiciona o email ao objeto de atualização
     }
 
-    // Se a senha for fornecida, faz o hash
+    // 2. Lógica de atualização de senha
+    // Se uma nova senha for fornecida, faz o hash
     if (password) {
       const salt = await bcrypt.genSalt(10);
       updateFields.password = await bcrypt.hash(password, salt);
     }
 
+    // 3. Executa a atualização no banco de dados
     const updatedUser = await User.findByIdAndUpdate(
-      userId, // Usa o ID do usuário
+      userId,
       { $set: updateFields },
-      { new: true, runValidators: true } // Retorna o documento atualizado e roda validadores
-    ).select('-password'); // Não retorna a senha
+      { new: true, runValidators: true, context: 'query' }
+    ).select('-password');
 
     if (!updatedUser) {
-      return res.status(404).json({ message: 'Usuário não encontrado.' });
+      // Esta verificação pode ser redundante se a de cima já pegou, mas é uma garantia
+      return res.status(404).json({ message: 'Falha ao atualizar o usuário.' });
     }
 
     res.json(updatedUser);
 
   } catch (err) {
-    res.status(500).json({ message: 'Erro ao atualizar usuário.', error: err });
+    // Adiciona um log mais detalhado do erro no servidor para depuração
+    console.error("Update User Error:", err); 
+    if (err.code === 11000) { // Código de erro de duplicidade do MongoDB
+      return res.status(400).json({ message: 'O email fornecido já está em uso.' });
+    }
+    res.status(500).json({ message: 'Erro interno ao atualizar o usuário.', error: err.message });
   }
 });
 

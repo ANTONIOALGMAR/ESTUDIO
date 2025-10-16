@@ -58,18 +58,33 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ show, onHide, onSave, use
     });
   };
 
+  const [error, setError] = useState(''); // Estado para erro local
+
+  // Limpa o erro quando o modal é fechado
+  const handleHide = () => {
+    setError('');
+    onHide();
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Validação extra: se for um novo usuário, a senha é obrigatória
+    if (!user && (!formData.password || formData.password.trim() === '')) {
+      setError('O campo senha é obrigatório para novos usuários.');
+      return; // Impede o envio
+    }
+    setError(''); // Limpa o erro se a validação passar
     onSave(formData);
   };
 
   return (
-    <Modal show={show} onHide={onHide} centered>
+    <Modal show={show} onHide={handleHide} centered>
       <Modal.Header closeButton>
         <Modal.Title>{user ? 'Editar Usuário' : 'Adicionar Novo Usuário'}</Modal.Title>
       </Modal.Header>
       <Form onSubmit={handleSubmit}>
         <Modal.Body>
+          {error && <Alert variant="danger" className="mb-3">{error}</Alert>}
           <Form.Group className="mb-3" controlId="userFullName">
             <Form.Label>Nome Completo</Form.Label>
             <Form.Control
