@@ -79,31 +79,48 @@ router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
 
 router.get('/refresh', async (req, res) => {
   const cookies = req.cookies;
-  if (!cookies?.jwt) return res.sendStatus(401);
+  if (!cookies?.jwt) {
+    return res.status(401).json({ message: 'Refresh token não encontrado no cookie.' });
+  }
 
   const refreshToken = cookies.jwt;
-  const user = await User.findOne({ refreshToken }).exec() || await Customer.findOne({ refreshToken }).exec();
 
-  if (!user) return res.sendStatus(403);
-
-  jwt.verify(
-    refreshToken,
-    REFRESH_TOKEN_SECRET,
-    (err, decoded) => {
-      if (err || user.id !== decoded.id) return res.sendStatus(403);
-
-      const userType = user.constructor.modelName === 'Customer' ? 'customer' : 'admin';
-      const accessToken = jwt.sign(
-        { id: decoded.id, userType: userType },
-        JWT_SECRET,
-        { expiresIn: '15m' }
-      );
-      res.json({
-        accessToken,
-        user: { id: user._id, fullName: user.fullName, email: user.email, userType: userType }
-      });
+  try {
+    // Tenta encontrar o usuário com base no refresh token
+    const user = await User.findOne({ refreshToken }).exec() || await Customer.findOne({ refreshToken }).exec();
+    if (!user) {
+      // Se o token existe mas não corresponde a nenhum usuário, é uma falha de segurança.
+      // Limpa o cookie malicioso e retorna erro.
+      res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true });
+      return res.status(403).json({ message: 'Falha na autenticação do refresh token.' });
     }
-  );
+
+    // Verifica o refresh token de forma síncrona dentro do try/catch
+    const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+
+    // Validação extra para garantir que o token pertence ao usuário encontrado
+    if (user.id !== decoded.id) {
+      return res.status(403).json({ message: 'Inconsistência no token.' });
+    }
+
+    // Se tudo estiver correto, gera um novo access token
+    const userType = user.constructor.modelName === 'Customer' ? 'customer' : 'admin';
+    const accessToken = jwt.sign(
+      { id: decoded.id, userType: userType },
+      JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    // Retorna o novo token e os dados do usuário
+    res.json({
+      accessToken,
+      user: { id: user._id, fullName: user.fullName, email: user.email, userType: userType }
+    });
+
+  } catch (err) {
+    // Se jwt.verify falhar (token inválido, expirado, etc.), um erro será lançado
+    return res.status(403).json({ message: 'Refresh token inválido ou expirado.' });
+  }
 });
 
 router.post('/logout', async (req, res) => {
