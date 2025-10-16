@@ -98,12 +98,12 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ show, onHide, onSave })
     }
 
     const quoteData = {
-      customer: {
+      customerData: {
         name: customerName,
         email: customerEmail,
         phone: customerPhone,
       },
-      serviceIds: selectedServiceIds,
+      selectedServices: selectedServiceIds,
     };
     onSave(quoteData);
   };
