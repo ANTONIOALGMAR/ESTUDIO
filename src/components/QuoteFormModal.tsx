@@ -15,6 +15,8 @@ import {
   Alert 
 } from '@mui/material';
 
+import api from '../api/api'; // Importa a instância do Axios
+
 // Interfaces
 interface IService {
   _id: string;
@@ -46,17 +48,11 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ show, onHide, onSave })
       const fetchServices = async () => {
         setLoading(true);
         setError('');
-        const token = localStorage.getItem('auth-token');
         try {
-          const apiUrl = process.env.REACT_APP_API_URL || 'https://estudio-backend-skzl.onrender.com';
-          const response = await fetch(`${apiUrl}/api/services/all`, { 
-            headers: { 'auth-token': token! }
-          });
-          if (!response.ok) throw new Error('Falha ao buscar serviços.');
-          const data = await response.json();
-          setAllServices(data);
+          const response = await api.get('/api/services/all');
+          setAllServices(response.data);
         } catch (err: any) {
-          setError(err.message);
+          setError(err.response?.data?.message || 'Falha ao buscar serviços.');
         } finally {
           setLoading(false);
         }
