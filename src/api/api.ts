@@ -10,10 +10,15 @@ const api = axios.create({
   withCredentials: true, 
 });
 
-let accessToken: string | null = null;
+let accessToken: string | null = localStorage.getItem('auth-token'); // Inicializa lendo do localStorage
 
 export const setAuthToken = (token: string | null) => {
   accessToken = token;
+  if (token) {
+    localStorage.setItem('auth-token', token);
+  } else {
+    localStorage.removeItem('auth-token');
+  }
 };
 
 // A função de setup que será chamada pelo AuthContext
