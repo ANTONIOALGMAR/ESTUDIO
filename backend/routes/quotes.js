@@ -2,6 +2,7 @@ const router = require('express').Router();
 const Quote = require('../models/Quote.model');
 const Service = require('../models/Service.model');
 const verifyAdmin = require('../middleware/verifyAdmin');
+const mongoose = require('mongoose'); // Importa o mongoose
 
 // ROTA DE ADMIN - Listar todos os orçamentos
 router.get('/', verifyAdmin, async (req, res) => {
@@ -17,13 +18,16 @@ router.get('/', verifyAdmin, async (req, res) => {
 router.post('/', verifyAdmin, async (req, res) => {
   const { customer, serviceIds } = req.body;
 
-  if (!customer || !serviceIds || serviceIds.length === 0) {
+  if (!customer || !serviceIds || !Array.isArray(serviceIds) || serviceIds.length === 0) {
     return res.status(400).json({ message: 'Dados do cliente e ao menos um serviço são obrigatórios.' });
   }
 
   try {
+    // Converte explicitamente as strings de ID para ObjectIds do MongoDB
+    const objectIdServiceIds = serviceIds.map(id => new mongoose.Types.ObjectId(id));
+
     // Busca os serviços no banco de dados para garantir a integridade dos preços
-    const services = await Service.find({ _id: { $in: serviceIds } });
+    const services = await Service.find({ _id: { $in: objectIdServiceIds } });
     if (services.length !== serviceIds.length) {
       return res.status(404).json({ message: 'Um ou mais serviços não foram encontrados.' });
     }
@@ -48,7 +52,11 @@ router.post('/', verifyAdmin, async (req, res) => {
 
   } catch (err) {
     console.error("ERRO AO CRIAR ORÇAMENTO:", err);
-    res.status(400).json({ message: 'Erro ao criar orçamento.', error: err });
+    // Verifica se o erro é um CastError e fornece uma mensagem mais clara
+    if (err.name === 'CastError') {
+      return res.status(400).json({ message: `ID de serviço inválido fornecido: ${err.value}` });
+    }
+    res.status(500).json({ message: 'Erro interno ao criar orçamento.', error: err });
   }
 });
 
