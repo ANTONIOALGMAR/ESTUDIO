@@ -66,10 +66,17 @@ router.put('/:id', verifyAdmin, async (req, res) => {
     const { fullName, email, password, role } = req.body;
     const updateFields = { fullName, email, role };
 
+    // Obter o usuário atual para comparar o email
+    const currentUser = await User.findById(userId);
+    if (!currentUser) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+
     // 1. Verifica se o email já existe para OUTRO usuário
-    if (email) { // Só verifica se o email foi fornecido no body
+    // Só verifica se o email foi fornecido no body E se é diferente do email atual do usuário
+    if (email && email !== currentUser.email) {
       const existingUser = await User.findOne({ email });
-      if (existingUser && existingUser._id.toString() !== userId) {
+      if (existingUser) { // Se encontrou outro usuário com o mesmo email
         return res.status(400).json({ message: 'Email já cadastrado.' });
       }
     }
