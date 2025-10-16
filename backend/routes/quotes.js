@@ -23,7 +23,7 @@ router.post('/', verifyAdmin, async (req, res) => {
 
   try {
     // Busca os serviços no banco de dados para garantir a integridade dos preços
-    const services = await Service.find({ '_id': { $in: serviceIds } });
+    const services = await Service.find({ _id: { $in: serviceIds } });
     if (services.length !== serviceIds.length) {
       return res.status(404).json({ message: 'Um ou mais serviços não foram encontrados.' });
     }
