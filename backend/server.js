@@ -77,7 +77,7 @@ app.use(cors({
 app.use(express.json());
 app.use(require('cookie-parser')());
 
-// app.use(sanitizeAll); // Sanitiza todos os inputs contra XSS
+// 
 
 // MongoDB Connection
 const uri = process.env.MONGO_URI;
