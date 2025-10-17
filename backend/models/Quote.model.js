@@ -15,7 +15,6 @@ const quoteSchema = new mongoose.Schema({
   quoteNumber: {
     type: String,
     unique: true,
-    required: true,
   },
   customer: {
     name: { type: String, required: true },
