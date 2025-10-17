@@ -78,6 +78,7 @@ router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
 });
 
 router.get('/refresh', async (req, res) => {
+  console.log("--- [DEBUG] Rota /refresh alcançada ---"); // Log de entrada
   const cookies = req.cookies;
   if (!cookies?.jwt) {
     return res.status(401).json({ message: 'Refresh token não encontrado no cookie.' });
