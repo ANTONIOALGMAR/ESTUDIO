@@ -22,14 +22,23 @@ router.post('/', verifyAdmin, async (req, res) => {
   const { customer, serviceIds } = req.body;
 
   if (!customer || !customer.name || !serviceIds || !Array.isArray(serviceIds) || serviceIds.length === 0) {
-    console.log("--- [DEBUG v3] VALIDAÇÃO FALHOU ---");
+    console.log("--- [DEBUG v3] VALIDAÇÃO FALHOU (dados básicos) ---");
     console.log("Customer:", customer);
     console.log("Service IDs:", serviceIds);
     return res.status(400).json({ message: 'Dados do cliente e ao menos um serviço são obrigatórios.' });
   }
 
+  // Validação de IDs de serviço
+  const invalidIds = serviceIds.filter(id => !mongoose.Types.ObjectId.isValid(id));
+  if (invalidIds.length > 0) {
+    console.log("--- [DEBUG v3] VALIDAÇÃO FALHOU (IDs inválidos) ---");
+    console.log("IDs inválidos detectados:", invalidIds);
+    return res.status(400).json({ message: 'Um ou mais IDs de serviço são inválidos.', invalidIds });
+  }
+
   try {
-    const services = await Service.find({ _id: { $in: serviceIds } });
+    // Converte explicitamente as strings de ID para ObjectIds do MongoDB
+    const objectIdServiceIds = serviceIds.map(id => new mongoose.Types.ObjectId(id));
 
     if (services.length !== serviceIds.length) {
       return res.status(404).json({ message: 'Um ou mais serviços não foram encontrados.' });
