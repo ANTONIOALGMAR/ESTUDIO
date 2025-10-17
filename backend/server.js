@@ -72,10 +72,12 @@ app.use(cors({
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization", "auth-token", "customer-auth-token"] // Garanta que os headers de token sejam permitidos
 }));
-app.use(express.json());
-app.use(sanitizeAll); // Sanitiza todos os inputs contra XSS
 
+// Middlewares para parsing de corpo e cookies devem vir antes das rotas e da sanitização
+app.use(express.json());
 app.use(require('cookie-parser')());
+
+app.use(sanitizeAll); // Sanitiza todos os inputs contra XSS
 
 // MongoDB Connection
 const uri = process.env.MONGO_URI;
