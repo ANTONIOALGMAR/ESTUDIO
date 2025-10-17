@@ -17,11 +17,11 @@ router.get('/', verifyAdmin, async (req, res) => {
 // ROTA DE ADMIN - Criar um novo orçamento
 router.post('/', verifyAdmin, async (req, res) => {
   console.log("--- INICIANDO CRIAÇÃO DE ORÇAMENTO (v2) ---"); // Log de versão
-  const { customerData: customer, selectedServices: serviceIds } = req.body;
+  const { customer, serviceIds } = req.body;
 
   console.log("Request Body Recebido:", JSON.stringify(req.body, null, 2));
 
-  if (!customer || !customer.name || !customer.email || !serviceIds || !Array.isArray(serviceIds) || serviceIds.length === 0) {
+  if (!customer || !customer.name || !serviceIds || !Array.isArray(serviceIds) || serviceIds.length === 0) {
     console.log("Validação falhou: Dados do cliente ou serviceIds ausentes/inválidos.");
     return res.status(400).json({ message: 'Dados do cliente e ao menos um serviço são obrigatórios.' });
   }
