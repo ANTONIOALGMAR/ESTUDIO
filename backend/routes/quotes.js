@@ -29,9 +29,7 @@ router.post('/', verifyAdmin, async (req, res) => {
   }
 
   try {
-    const objectIdServiceIds = serviceIds.map(id => new mongoose.Types.ObjectId(id));
-
-    const services = await Service.find({ _id: { $in: objectIdServiceIds } });
+    const services = await Service.find({ _id: { $in: serviceIds } });
 
     if (services.length !== serviceIds.length) {
       return res.status(404).json({ message: 'Um ou mais serviços não foram encontrados.' });
